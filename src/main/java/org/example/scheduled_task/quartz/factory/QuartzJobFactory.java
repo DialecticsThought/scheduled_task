@@ -22,14 +22,18 @@ public class QuartzJobFactory implements Job {
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
-        String taskName = context.getJobDetail().getKey().getName();
+        String taskId = context.getJobDetail().getKey().getName();
 
-        ScheduledTaskMetaData<?> scheduledTaskMetaData = scheduledTaskRegistry.getTaskWithStrategy(taskName);
+        ScheduledTaskMetaData<?> scheduledTaskMetaData = scheduledTaskRegistry.getScheduledTaskMetaData(taskId);
 
         ScheduledTask<?> scheduledTask = scheduledTaskMetaData.getScheduledTask();
 
         if (scheduledTask != null) {
+
+            // 这个方法在 QuartzJob 中实际执行任务逻辑。每当 Quartz 调度器触发任务时，这个方法会被调用
             scheduledTask.execute();
+
+            scheduledTaskRegistry.markExecute(taskId);
         }
     }
 }

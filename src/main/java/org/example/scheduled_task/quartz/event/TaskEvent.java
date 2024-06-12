@@ -14,27 +14,16 @@ public class TaskEvent extends ApplicationEvent {
 
     private ScheduledTaskMetaData<?> scheduledTaskMetaData;
 
-    private String taskName;
-
-    public TaskEvent(Object source, ScheduledTaskMetaData<?> scheduledTaskMetaData, String taskName) {
+    public TaskEvent(Object source, ScheduledTaskMetaData<?> scheduledTaskMetaData) {
         super(source);
         this.scheduledTaskMetaData = scheduledTaskMetaData;
-        this.taskName = taskName;
     }
 
-    public ScheduledTaskMetaData<?> getScheduledTaskWithStrategy() {
+    public ScheduledTaskMetaData<?> getScheduledTaskMetaData() {
         return scheduledTaskMetaData;
     }
 
-    public void setScheduledTaskWithStrategy(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
+    public void setScheduledTaskMetaData(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
         this.scheduledTaskMetaData = scheduledTaskMetaData;
-    }
-
-    public String getTaskName() {
-        return taskName;
-    }
-
-    public void setTaskName(String taskName) {
-        this.taskName = taskName;
     }
 }

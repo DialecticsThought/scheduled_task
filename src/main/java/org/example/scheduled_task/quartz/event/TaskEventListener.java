@@ -26,36 +26,42 @@ public class TaskEventListener {
     @Autowired
     private SchedulerFactoryBean schedulerFactoryBean;
 
+    @EventListener
+    public void handleTaskEvent(TaskEvent taskEvent) {
+
+        ScheduledTaskMetaData<?> scheduledTaskMetaData = taskEvent.getScheduledTaskMetaData();
+
+        if (scheduledTaskRegistry.containsTask(scheduledTaskMetaData.getTaskId())) {
+
+            if (!scheduledTaskRegistry.isDeleted(scheduledTaskMetaData.getTaskId())) {
+
+                scheduledTaskRegistry.registerTask(scheduledTaskMetaData.getTaskId(), scheduledTaskMetaData);
+
+                scheduleJob(scheduledTaskMetaData);
+            }
+        }
+    }
+
     /**
      * 把任务祖册到Quartz调度器里面
-     * @param taskName
-     * @param scheduleStrategy
      */
-    private void scheduleJob(String taskName, ScheduleStrategy scheduleStrategy) {
-        ScheduledTaskMetaData<?> taskWithStrategy = scheduledTaskRegistry.getTaskWithStrategy(taskName);
+    private void scheduleJob(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
 
-        JobDetail jobDetail = JobBuilder.newJob(QuartzJobFactory.class).withIdentity(taskName).build();
+        JobDetail jobDetail = JobBuilder.newJob(QuartzJobFactory.class).withIdentity(scheduledTaskMetaData.getTaskId()).build();
 
-        Trigger trigger = scheduleStrategy.getTrigger(taskName);
+        Trigger trigger = scheduledTaskMetaData.getScheduleStrategy().getTrigger(scheduledTaskMetaData.getTaskId());
 
         Scheduler scheduler = schedulerFactoryBean.getScheduler();
 
         try {
+            // 将 JobDetail 和 Trigger 关联起来并调度任务
+            // 将任务调度到 Quartz 调度器中。它并不直接执行任务，而是安排任务在指定的时间触发
             scheduler.scheduleJob(jobDetail, trigger);
+            // 重置任务状态为已添加
+            // 在事件监听器中，当任务事件触发时，你需要确保任务的状态被正确重置，以便 Quartz 调度器可以重新调度和执行该任务
+            scheduledTaskRegistry.resetCanceled(scheduledTaskMetaData.getTaskId());
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
-    }
-
-    @EventListener
-    public void handleTaskEvent(TaskEvent taskEvent) {
-        String taskName = taskEvent.getTaskName();
-
-        ScheduledTaskMetaData<?> scheduledTaskMetaData = taskEvent.getScheduledTaskWithStrategy();
-
-        scheduledTaskRegistry.registerTask(taskName, scheduledTaskMetaData);
-
-        scheduleJob(taskName, scheduledTaskMetaData.getScheduleStrategy());
-
     }
 }

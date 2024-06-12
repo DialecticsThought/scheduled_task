@@ -17,8 +17,9 @@ public class TaskEventPublisher {
     @Resource
     private ApplicationEventPublisher applicationEventPublisher;
 
-    public void publishTaskEvent(ScheduledTaskMetaData<?> scheduledTaskMetaData, String taskName) {
-        TaskEvent taskEvent = new TaskEvent(this, scheduledTaskMetaData, taskName);
+    public void publishTaskEvent(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
+
+        TaskEvent taskEvent = new TaskEvent(this, scheduledTaskMetaData);
 
         applicationEventPublisher.publishEvent(taskEvent);
     }

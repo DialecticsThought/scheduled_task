@@ -16,6 +16,9 @@ import org.example.scheduled_task.quartz.task.ScheduledTask;
 @AllArgsConstructor
 @Data
 public class ScheduledTaskMetaData<T> {
+    private String taskId;
+
+    private String taskName;
 
     private ScheduleStrategy scheduleStrategy;
 
