@@ -19,7 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @description 注册中心
  * @date 2024/05/23 15:42
  */
-@Component
+//@Component
 public class MemoryScheduledTaskRegistry implements ScheduledTaskRegistry{
     @Resource
     private SchedulerFactoryBean schedulerFactoryBean;
