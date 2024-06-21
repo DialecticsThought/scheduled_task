@@ -2,7 +2,7 @@ package org.example.scheduled_task.quartz.factory;
 
 
 import jakarta.annotation.Resource;
-import org.example.scheduled_task.quartz.ScheduledTaskRegistry;
+import org.example.scheduled_task.registry.MemoryScheduledTaskRegistry;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.task.ScheduledTask;
 import org.quartz.Job;
@@ -18,22 +18,21 @@ import org.springframework.stereotype.Component;
 @Component
 public class QuartzJobFactory implements Job {
     @Resource
-    private ScheduledTaskRegistry scheduledTaskRegistry;
+    private MemoryScheduledTaskRegistry memoryScheduledTaskRegistry;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
         String taskId = context.getJobDetail().getKey().getName();
 
-        ScheduledTaskMetaData<?> scheduledTaskMetaData = scheduledTaskRegistry.getScheduledTaskMetaData(taskId);
+        ScheduledTaskMetaData<?> scheduledTaskMetaData = memoryScheduledTaskRegistry.getScheduledTaskMetaData(taskId);
 
         ScheduledTask<?> scheduledTask = scheduledTaskMetaData.getScheduledTask();
 
         if (scheduledTask != null) {
-
             // 这个方法在 QuartzJob 中实际执行任务逻辑。每当 Quartz 调度器触发任务时，这个方法会被调用
             scheduledTask.execute();
 
-            scheduledTaskRegistry.markExecute(taskId);
+            memoryScheduledTaskRegistry.markExecute(taskId);
         }
     }
 }

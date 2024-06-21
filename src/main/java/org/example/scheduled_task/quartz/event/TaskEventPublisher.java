@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class TaskEventPublisher {
-
+    // spring的事件发布器
     @Resource
     private ApplicationEventPublisher applicationEventPublisher;
 
@@ -23,5 +23,4 @@ public class TaskEventPublisher {
 
         applicationEventPublisher.publishEvent(taskEvent);
     }
-
 }

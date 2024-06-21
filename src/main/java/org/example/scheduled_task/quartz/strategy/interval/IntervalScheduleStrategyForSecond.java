@@ -1,8 +1,9 @@
-package org.example.scheduled_task.quartz.strategy;
+package org.example.scheduled_task.quartz.strategy.interval;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.scheduled_task.quartz.strategy.ScheduleStrategy;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
@@ -15,17 +16,18 @@ import org.quartz.TriggerBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class IntervalSecondScheduleStrategy implements ScheduleStrategy {
-    private Integer interval;
-
-    //private TimeUnit unit;
+public class IntervalScheduleStrategyForSecond implements ScheduleStrategy {
+    /**
+     * 秒数
+     */
+    private Integer second;
 
     @Override
     public Trigger getTrigger(String taskName) {
         return TriggerBuilder
                 .newTrigger()
                 .withIdentity(taskName + "_trigger")
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(interval).repeatForever())
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInSeconds(second).repeatForever())
                 .build();
     }
 }

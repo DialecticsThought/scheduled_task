@@ -2,10 +2,8 @@ package org.example.scheduled_task.controller;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.example.scheduled_task.quartz.ScheduledTaskRegistry;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
-import org.example.scheduled_task.quartz.event.TaskEventPublisher;
-import org.example.scheduled_task.quartz.strategy.CronScheduleStrategy;
+import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.TestTask;
 import org.example.scheduled_task.service.TaskService;
 import org.springframework.web.bind.annotation.*;
@@ -33,16 +31,10 @@ public class TaskController {
     @GetMapping("/add")
     public String addTask(@RequestParam("cronExpression") String cronExpression,
                           @RequestParam("taskId") String taskId,
-                          @RequestParam("taskName") String taskName) {
+                          @RequestParam("taskName") String taskName,
+                          @RequestParam("taskClassPath") String taskClassPath) {
 
-        CronScheduleStrategy cronScheduleStrategy = new CronScheduleStrategy(cronExpression);
-
-        TestTask testTask = new TestTask();
-
-        ScheduledTaskMetaData<Void> scheduledTaskMetaData =
-                new ScheduledTaskMetaData<>(taskId, taskName, cronScheduleStrategy, testTask);
-
-        taskService.addTask(scheduledTaskMetaData);
+        taskService.addTaskCompletely(cronExpression, taskId, taskName, taskClassPath);
 
         return "add";
     }
@@ -73,6 +65,7 @@ public class TaskController {
 
     /**
      * 删除任务元信息
+     *
      * @param taskId
      * @return
      */

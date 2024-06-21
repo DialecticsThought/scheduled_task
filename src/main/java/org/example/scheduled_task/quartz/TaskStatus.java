@@ -16,7 +16,7 @@ public enum TaskStatus {
     /**
      * 添加
      */
-    ADD,
+    ADDED,
     /**
      * 执行
      */
@@ -24,9 +24,9 @@ public enum TaskStatus {
     /**
      * 取消
      */
-    CANCEL,
+    CANCELED,
     /**
      * 删除
      */
-    DELETE;
+    DELETED;
 }

@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class AutowiringSpringBeanJobFactory extends SpringBeanJobFactory {
-
+    // spring 容器本身
     @Resource
     private AutowireCapableBeanFactory beanFactory;
 

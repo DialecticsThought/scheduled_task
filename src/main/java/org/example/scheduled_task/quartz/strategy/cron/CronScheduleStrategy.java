@@ -1,8 +1,9 @@
-package org.example.scheduled_task.quartz.strategy;
+package org.example.scheduled_task.quartz.strategy.cron;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.example.scheduled_task.quartz.strategy.ScheduleStrategy;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;

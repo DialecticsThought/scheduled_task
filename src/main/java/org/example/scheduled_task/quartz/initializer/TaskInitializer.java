@@ -1,4 +1,4 @@
-package org.example.scheduled_task.quartz;
+package org.example.scheduled_task.quartz.initializer;
 
 import jakarta.annotation.Resource;
 import org.example.scheduled_task.quartz.event.TaskEventPublisher;
@@ -6,18 +6,15 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-
 /**
  * @author jiahao.liu
- * @description
- * @date 2024/05/24 10:53
+ * @description 这个类 就是用来在项目启动的时候，就执行在onApplicationReady方法中定义的任务
+，加载任务的 * @date 2024/05/24 10:53
  */
 @Component
 public class TaskInitializer {
     @Resource
     private TaskEventPublisher taskEventPublisher;
-
 
     public final Integer EVERY_30_MINUTES = 30;
 
@@ -29,7 +26,6 @@ public class TaskInitializer {
 
     @EventListener
     public void onApplicationReady(ApplicationReadyEvent event) {
-
 
         //taskEventPublisher.publishTaskEvent(taskWithStrategy2, "refreshLatestPipelinesForProjectsCacheScheduledTask");
     }

@@ -16,12 +16,21 @@ import org.example.scheduled_task.quartz.task.ScheduledTask;
 @AllArgsConstructor
 @Data
 public class ScheduledTaskMetaData<T> {
+    /**
+     * 任务id
+     */
     private String taskId;
-
+    /**
+     * 任务名称
+     */
     private String taskName;
-
+    /**
+     * 任务调度策略
+     */
     private ScheduleStrategy scheduleStrategy;
-
+    /**
+     * 任务
+     */
     private ScheduledTask<T> scheduledTask;
 
     public T execute() {
