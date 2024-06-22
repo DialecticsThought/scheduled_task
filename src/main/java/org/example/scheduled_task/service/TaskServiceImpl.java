@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.event.TaskEventPublisher;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
-import org.example.scheduled_task.quartz.task.ScheduledTask;
+import org.example.scheduled_task.quartz.task.ExecutedTask;
 import org.example.scheduled_task.quartz.registry.ScheduledTaskRegistry;
 import org.springframework.stereotype.Service;
 
@@ -25,16 +25,16 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public void addTaskCompletely(String cronExpression, String taskId,
                                   String taskName, String taskClassPath) {
-        ScheduledTask instance = null;
+        ExecutedTask instance = null;
         try {
             // 接口类
-            Class<?> interfaceClass = ScheduledTask.class;
+            Class<?> interfaceClass = ExecutedTask.class;
             // 获取 Class 对象
             Class<?> clazz = Class.forName(taskClassPath);
             // 检查是否实现了指定接口
             if (interfaceClass.isAssignableFrom(clazz)) {
                 // 创建对象实例
-                instance = (ScheduledTask) clazz.getDeclaredConstructor().newInstance();
+                instance = (ExecutedTask) clazz.getDeclaredConstructor().newInstance();
                 System.out.println("对象创建成功：" + instance);
             } else {
                 throw new IllegalArgumentException(taskClassPath + " 未实现接口 " + interfaceClass.getName());

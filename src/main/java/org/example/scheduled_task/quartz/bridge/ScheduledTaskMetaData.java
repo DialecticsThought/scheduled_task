@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.example.scheduled_task.quartz.strategy.ScheduleStrategy;
-import org.example.scheduled_task.quartz.task.ScheduledTask;
+import org.example.scheduled_task.quartz.task.ExecutedTask;
 
 /**
  * @author jiahao.liu
@@ -31,9 +31,9 @@ public class ScheduledTaskMetaData<T> {
     /**
      * 任务
      */
-    private ScheduledTask<T> scheduledTask;
+    private ExecutedTask<T> executedTask;
 
     public T execute() {
-        return scheduledTask.execute();
+        return executedTask.execute();
     }
 }

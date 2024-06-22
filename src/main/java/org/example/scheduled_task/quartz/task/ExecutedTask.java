@@ -7,7 +7,7 @@ package org.example.scheduled_task.quartz.task;
  * @date 2024/05/23 15:29
  */
 @FunctionalInterface
-public interface ScheduledTask<T> {
+public interface ExecutedTask<T> {
 
     T execute();
 }

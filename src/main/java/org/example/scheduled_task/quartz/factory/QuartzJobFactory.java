@@ -3,7 +3,7 @@ package org.example.scheduled_task.quartz.factory;
 
 import jakarta.annotation.Resource;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
-import org.example.scheduled_task.quartz.task.ScheduledTask;
+import org.example.scheduled_task.quartz.task.ExecutedTask;
 import org.example.scheduled_task.quartz.registry.ScheduledTaskRegistry;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -26,11 +26,11 @@ public class QuartzJobFactory implements Job {
 
         ScheduledTaskMetaData<?> scheduledTaskMetaData = scheduledTaskRegistry.getScheduledTaskMetaData(taskId);
 
-        ScheduledTask<?> scheduledTask = scheduledTaskMetaData.getScheduledTask();
+        ExecutedTask<?> executedTask = scheduledTaskMetaData.getExecutedTask();
 
-        if (scheduledTask != null) {
+        if (executedTask != null) {
             // 这个方法在 QuartzJob 中实际执行任务逻辑。每当 Quartz 调度器触发任务时，这个方法会被调用
-            scheduledTask.execute();
+            executedTask.execute();
 
             scheduledTaskRegistry.markExecute(taskId);
         }
