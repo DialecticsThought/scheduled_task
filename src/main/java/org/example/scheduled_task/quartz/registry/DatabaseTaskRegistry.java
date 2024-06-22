@@ -21,17 +21,16 @@ import java.util.Map;
 
 
 /**
- * @Description
- *TODO
+ * @Description TODO
  * 创建任务对象的过程
- *      1.转换和存储任务对象的属性：
- *      2.在 registerTask 方法中，将任务对象的自定义属性和类路径存储到数据库中。
- *      3.使用反射获取任务对象的所有自定义属性，并将它们序列化为 JSON 字符串存储在 TaskProperties 表中。
+ * 1.转换和存储任务对象的属性：
+ * 2.在 registerTask 方法中，将任务对象的自定义属性和类路径存储到数据库中。
+ * 3.使用反射获取任务对象的所有自定义属性，并将它们序列化为 JSON 字符串存储在 TaskProperties 表中。
  * 恢复任务对象的过程：
- *      1.在 getScheduledTaskMetaData 方法中，从数据库中读取任务对象的类路径和属性。
- *      2.动态加载任务类，实例化任务对象。
- *      3.使用 Spring 容器注入依赖到任务对象中。
- *      4.使用反射将存储的自定义属性设置回任务对象。
+ * 1.在 getScheduledTaskMetaData 方法中，从数据库中读取任务对象的类路径和属性。
+ * 2.动态加载任务类，实例化任务对象。
+ * 3.使用 Spring 容器注入依赖到任务对象中。
+ * 4.使用反射将存储的自定义属性设置回任务对象。
  * @Author veritas
  * @Data 2024/6/22 15:17
  */
@@ -88,6 +87,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
 
                 // 获取任务属性
                 Map<String, Object> properties = getProperties(scheduledTaskMetaData.getExecutedTask());
+                // 把ExecutedTask对象的所有属性JSON化存入数据库
                 taskProperties.setProperties(objectMapper.writeValueAsString(properties));
             }
         } catch (Exception e) {
@@ -236,23 +236,59 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         return metaData;
     }
 
+    /**
+     * 涉及递归调用
+     * @param task
+     * @return
+     * @throws IllegalAccessException
+     */
     private Map<String, Object> getProperties(Object task) throws IllegalAccessException {
-        // 使用反射获取任务实例的属性
+        // 使用反射递归获取任务实例的自定义属性和依赖注入的属性
         Map<String, Object> properties = new HashMap<>();
         for (Field field : task.getClass().getDeclaredFields()) {
             field.setAccessible(true);
-            properties.put(field.getName(), field.get(task));
+            Object value = field.get(task);
+            if (value != null && !isPrimitiveOrWrapper(value.getClass()) && !value.getClass().equals(String.class)) {
+                // 递归处理对象属性
+                properties.put(field.getName(), getProperties(value));
+            } else {
+                properties.put(field.getName(), value);
+            }
         }
         return properties;
     }
 
-    private void setProperties(Object task, Map<String, Object> properties) throws IllegalAccessException {
-        // 使用反射设置任务实例的属性
+    private void setProperties(Object task, Map<String, Object> properties) throws Exception {
+
+        // 使用反射递归设置任务实例的自定义属性和依赖注入的属性
         for (Field field : task.getClass().getDeclaredFields()) {
             field.setAccessible(true);
-            if (properties.containsKey(field.getName())) {
-                field.set(task, properties.get(field.getName()));
+            Object value = properties.get(field.getName());
+            if (value != null && !isPrimitiveOrWrapper(field.getType()) && !field.getType().equals(String.class)) {
+                // 如果属性是对象，递归设置属性
+                Object nestedObject = field.getType().getDeclaredConstructor().newInstance();
+                setProperties(nestedObject, (Map<String, Object>) value);
+                field.set(task, nestedObject);
+                // 判断是否为依赖注入
+                if (field.isAnnotationPresent(Autowired.class)) {
+                    beanFactory.autowireBean(nestedObject);
+                }
+            } else {
+                field.set(task, value);
             }
         }
+    }
+
+    private boolean isPrimitiveOrWrapper(Class<?> clazz) {
+        return clazz.isPrimitive() ||
+                clazz.equals(Boolean.class) ||
+                clazz.equals(Byte.class) ||
+                clazz.equals(Character.class) ||
+                clazz.equals(Double.class) ||
+                clazz.equals(Float.class) ||
+                clazz.equals(Integer.class) ||
+                clazz.equals(Long.class) ||
+                clazz.equals(Short.class) ||
+                clazz.equals(Void.class);
     }
 }
