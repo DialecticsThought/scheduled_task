@@ -3,6 +3,7 @@ package org.example.scheduled_task.service;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
+import org.example.scheduled_task.quartz.entity.BeanManager;
 import org.example.scheduled_task.quartz.event.TaskEventPublisher;
 import org.example.scheduled_task.quartz.registry.EnhancedRedisScheduledTaskRegistry;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
@@ -30,7 +31,7 @@ public class TaskServiceImpl implements TaskService {
     @Resource
     private ApplicationContext applicationContext;
     @Resource
-    private AutowireCapableBeanFactory beanFactory;
+    private BeanManager beanManager;
     @Resource
     private TaskEventPublisher taskEventPublisher;
     @Resource
@@ -45,19 +46,12 @@ public class TaskServiceImpl implements TaskService {
         }
         ExecutedTask instance = null;
         try {
+            String beanName = taskId + ":quartz_task";
             // 获取 Class 对象
             Class<?> clazz = Class.forName(taskClassPath);
             // 检查是否实现了指定接口
             if (ExecutedTask.class.isAssignableFrom(clazz)) {
-                // 创建对象实例
-                instance = (ExecutedTask<?>) clazz.getDeclaredConstructor().newInstance();
-                // 使用 autowireBean 方法将对象的依赖注入到对象中
-                applicationContext.getAutowireCapableBeanFactory().autowireBean(instance);
-                // 注册Bean到Spring容器
-                ConfigurableApplicationContext configurableApplicationContext = (ConfigurableApplicationContext) applicationContext;
-                configurableApplicationContext.getBeanFactory().registerSingleton(taskId, instance);
-
-                System.out.println("对象创建并注入容器成功：" + instance);
+                instance = (ExecutedTask) beanManager.createAndRegisterBean(beanName, taskClassPath);
             } else {
                 throw new IllegalArgumentException(taskClassPath + " 未实现接口 " + ExecutedTask.class.getName());
             }

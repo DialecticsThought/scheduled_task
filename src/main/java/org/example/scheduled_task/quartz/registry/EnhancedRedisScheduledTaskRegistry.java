@@ -3,11 +3,13 @@ package org.example.scheduled_task.quartz.registry;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
+import org.example.scheduled_task.quartz.entity.BeanManager;
 import org.example.scheduled_task.quartz.util.TaskUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
@@ -32,11 +34,12 @@ import java.util.Map;
 @Component
 public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry {
 
+    private static final Logger log = LoggerFactory.getLogger(EnhancedRedisScheduledTaskRegistry.class);
     private final RedisScheduledTaskRegistry redisScheduledTaskRegistry;
     @Resource
     private ApplicationContext applicationContext;
     @Resource
-    private AutowireCapableBeanFactory beanFactory;
+    private BeanManager beanManager;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -108,19 +111,7 @@ public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry
     }
 
     private void removeTaskFromSpringContainer(String taskId) {
-/*        AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
-        if (beanFactory instanceof BeanDefinitionRegistry) {
-            BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
-            if (registry.containsBeanDefinition(taskId)) {
-                registry.removeBeanDefinition(taskId);
-                System.out.println("任务对象已从容器中删除，taskId：" + taskId);
-            }
-        }*/
-        ConfigurableListableBeanFactory beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
-        Object bean = beanFactory.getBean(taskId);
-        if (bean != null) {
-            beanFactory.destroyBean(taskId, bean);
-            System.out.println("任务对象已从容器中删除，taskId：" + taskId);
-        }
+        String beanName = taskId + ":quartz_task";
+        beanManager.removeBeanByName(beanName);
     }
 }

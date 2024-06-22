@@ -1,15 +1,16 @@
 package org.example.scheduled_task.quartz.task;
 
 import jakarta.annotation.Resource;
-import org.example.scheduled_task.quartz.entity.SpringContextHolder;
+import org.springframework.context.annotation.Scope;
 
-import java.time.LocalDateTime;
+
 
 /**
  * @author jiahao.liu
  * @description
  * @date 2024/06/11 19:12
  */
+@Scope("prototype")
 public class TestTask implements ExecutedTask<Void> {
 
     @Resource
