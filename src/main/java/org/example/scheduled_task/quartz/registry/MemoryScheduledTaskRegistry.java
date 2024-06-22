@@ -1,4 +1,4 @@
-package org.example.scheduled_task.registry;
+package org.example.scheduled_task.quartz.registry;
 
 
 import jakarta.annotation.Resource;
@@ -8,7 +8,6 @@ import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
-import org.springframework.stereotype.Component;
 
 
 import java.util.Map;

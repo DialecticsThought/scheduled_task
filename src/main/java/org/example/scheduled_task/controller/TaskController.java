@@ -35,7 +35,6 @@ public class TaskController {
                           @RequestParam("taskClassPath") String taskClassPath) {
 
         taskService.addTaskCompletely(cronExpression, taskId, taskName, taskClassPath);
-
         return "add";
     }
 

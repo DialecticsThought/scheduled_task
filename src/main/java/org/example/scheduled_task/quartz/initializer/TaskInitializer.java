@@ -8,8 +8,8 @@ import org.springframework.stereotype.Component;
 
 /**
  * @author jiahao.liu
- * @description 这个类 就是用来在项目启动的时候，就执行在onApplicationReady方法中定义的任务
-，加载任务的 * @date 2024/05/24 10:53
+ * @description 这个类 就是用来在项目启动的时候，就加载在onApplicationReady方法中定义的任务
+ * @date 2024/05/24 10:53
  */
 @Component
 public class TaskInitializer {

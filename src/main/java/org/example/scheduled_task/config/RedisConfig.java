@@ -13,7 +13,7 @@ import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 
 /**
  * @Description
- * @Author veritas
+ * @Author jiahao.liu
  * @Data 2024/6/21 22:35
  */
 @Configuration

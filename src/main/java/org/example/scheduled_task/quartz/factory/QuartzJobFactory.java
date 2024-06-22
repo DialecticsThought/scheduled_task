@@ -4,7 +4,7 @@ package org.example.scheduled_task.quartz.factory;
 import jakarta.annotation.Resource;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.task.ScheduledTask;
-import org.example.scheduled_task.registry.ScheduledTaskRegistry;
+import org.example.scheduled_task.quartz.registry.ScheduledTaskRegistry;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;

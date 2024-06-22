@@ -1,5 +1,6 @@
-package org.example.scheduled_task.registry;
+package org.example.scheduled_task.quartz.registry;
 
+import jakarta.annotation.Resource;
 import org.example.scheduled_task.quartz.TaskStatus;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.quartz.JobKey;
@@ -13,16 +14,20 @@ import org.springframework.stereotype.Component;
 
 /**
  * @Description
- * @Author veritas
+ * @Author jiahao.liu
  * @Data 2024/6/21 23:48
  */
 @Component
 public class RedisScheduledTaskRegistry implements ScheduledTaskRegistry {
 
-    @Autowired
+    private static final String TASK_META_DATA_KEY_PREFIX = "taskMetaData:";
+
+    private static final String TASK_STATUS_KEY_PREFIX = "taskStatus:";
+
+    @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
-    @Autowired
+    @Resource
     private SchedulerFactoryBean schedulerFactoryBean;
 
     private ValueOperations<String, Object> valueOps;
@@ -31,9 +36,6 @@ public class RedisScheduledTaskRegistry implements ScheduledTaskRegistry {
     public void setValueOps(RedisTemplate<String, Object> redisTemplate) {
         this.valueOps = redisTemplate.opsForValue();
     }
-
-    private static final String TASK_META_DATA_KEY_PREFIX = "taskMetaData:";
-    private static final String TASK_STATUS_KEY_PREFIX = "taskStatus:";
 
     @Override
     public ScheduledTaskMetaData<?> getScheduledTaskMetaData(String taskId) {

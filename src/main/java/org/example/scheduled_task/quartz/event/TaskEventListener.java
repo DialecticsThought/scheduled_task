@@ -4,7 +4,7 @@ package org.example.scheduled_task.quartz.event;
 import jakarta.annotation.Resource;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.factory.QuartzJobFactory;
-import org.example.scheduled_task.registry.ScheduledTaskRegistry;
+import org.example.scheduled_task.quartz.registry.ScheduledTaskRegistry;
 import org.quartz.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;

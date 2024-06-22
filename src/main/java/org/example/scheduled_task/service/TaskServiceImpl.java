@@ -6,7 +6,7 @@ import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.event.TaskEventPublisher;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ScheduledTask;
-import org.example.scheduled_task.registry.ScheduledTaskRegistry;
+import org.example.scheduled_task.quartz.registry.ScheduledTaskRegistry;
 import org.springframework.stereotype.Service;
 
 /**

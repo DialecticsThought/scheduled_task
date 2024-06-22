@@ -1,4 +1,4 @@
-package org.example.scheduled_task.registry;
+package org.example.scheduled_task.quartz.registry;
 
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 
