@@ -12,6 +12,7 @@ import org.example.scheduled_task.quartz.TaskStatus;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
+import org.example.scheduled_task.quartz.util.TaskUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 
@@ -46,13 +47,9 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
-    /**
-     * @param taskId
-     * @return
-     */
     @Override
     public ScheduledTaskMetaData<?> getScheduledTaskMetaData(String taskId) {
-        // 根据taskId从scheduled_task表中查询任务
+        // 根据taskId从数据库中查询任务
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("task_id", taskId);
         ScheduledTask taskEntity = taskMapper.selectOne(queryWrapper);
@@ -81,13 +78,12 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         taskProperties.setTaskId(taskId);
         try {
             if (scheduledTaskMetaData.getExecutedTask() != null) {
-                // 获取任务类路径
+                // 获取任务自定义属性和依赖注入的属性
                 String taskClassPath = scheduledTaskMetaData.getExecutedTask().getClass().getName();
                 taskProperties.setTaskClassPath(taskClassPath);
 
                 // 获取任务属性
-                Map<String, Object> properties = getProperties(scheduledTaskMetaData.getExecutedTask());
-                // 把ExecutedTask对象的所有属性JSON化存入数据库
+                Map<String, Object> properties = TaskUtils.getProperties(scheduledTaskMetaData.getExecutedTask());
                 taskProperties.setProperties(objectMapper.writeValueAsString(properties));
             }
         } catch (Exception e) {
@@ -132,7 +128,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     }
 
     @Override
-    public void cancelTask(String taskId) {
+    public void cancelTask(String taskId)  {
         // 根据taskId查询ScheduledTask实体
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("task_id", taskId);
@@ -224,7 +220,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
             // 如果存在属性，则反序列化属性并设置到任务实例中
             if (taskProperties.getProperties() != null) {
                 Map<String, Object> properties = objectMapper.readValue(taskProperties.getProperties(), Map.class);
-                setProperties(taskInstance, properties);
+                TaskUtils.setProperties(taskInstance, properties);
                 metaData.setProperties(properties);
             }
 
@@ -234,61 +230,5 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         }
 
         return metaData;
-    }
-
-    /**
-     * 涉及递归调用
-     * @param task
-     * @return
-     * @throws IllegalAccessException
-     */
-    private Map<String, Object> getProperties(Object task) throws IllegalAccessException {
-        // 使用反射递归获取任务实例的自定义属性和依赖注入的属性
-        Map<String, Object> properties = new HashMap<>();
-        for (Field field : task.getClass().getDeclaredFields()) {
-            field.setAccessible(true);
-            Object value = field.get(task);
-            if (value != null && !isPrimitiveOrWrapper(value.getClass()) && !value.getClass().equals(String.class)) {
-                // 递归处理对象属性
-                properties.put(field.getName(), getProperties(value));
-            } else {
-                properties.put(field.getName(), value);
-            }
-        }
-        return properties;
-    }
-
-    private void setProperties(Object task, Map<String, Object> properties) throws Exception {
-
-        // 使用反射递归设置任务实例的自定义属性和依赖注入的属性
-        for (Field field : task.getClass().getDeclaredFields()) {
-            field.setAccessible(true);
-            Object value = properties.get(field.getName());
-            if (value != null && !isPrimitiveOrWrapper(field.getType()) && !field.getType().equals(String.class)) {
-                // 如果属性是对象，递归设置属性
-                Object nestedObject = field.getType().getDeclaredConstructor().newInstance();
-                setProperties(nestedObject, (Map<String, Object>) value);
-                field.set(task, nestedObject);
-                // 判断是否为依赖注入
-                if (field.isAnnotationPresent(Autowired.class)) {
-                    beanFactory.autowireBean(nestedObject);
-                }
-            } else {
-                field.set(task, value);
-            }
-        }
-    }
-
-    private boolean isPrimitiveOrWrapper(Class<?> clazz) {
-        return clazz.isPrimitive() ||
-                clazz.equals(Boolean.class) ||
-                clazz.equals(Byte.class) ||
-                clazz.equals(Character.class) ||
-                clazz.equals(Double.class) ||
-                clazz.equals(Float.class) ||
-                clazz.equals(Integer.class) ||
-                clazz.equals(Long.class) ||
-                clazz.equals(Short.class) ||
-                clazz.equals(Void.class);
     }
 }

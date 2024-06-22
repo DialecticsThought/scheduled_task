@@ -4,10 +4,14 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.event.TaskEventPublisher;
+import org.example.scheduled_task.quartz.registry.EnhancedRedisScheduledTaskRegistry;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
 import org.example.scheduled_task.quartz.registry.ScheduledTaskRegistry;
+import org.example.scheduled_task.quartz.util.TaskUtils;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 /**
  * @author jiahao.liu
@@ -20,44 +24,49 @@ public class TaskServiceImpl implements TaskService {
     @Resource
     private TaskEventPublisher taskEventPublisher;
     @Resource
-    private ScheduledTaskRegistry scheduledTaskRegistry;
+    private EnhancedRedisScheduledTaskRegistry scheduledTaskRegistry;
 
     @Override
     public void addTaskCompletely(String cronExpression, String taskId,
                                   String taskName, String taskClassPath) {
-        ExecutedTask instance = null;
+        ExecutedTask<?> instance = null;
         try {
-            // 接口类
-            Class<?> interfaceClass = ExecutedTask.class;
             // 获取 Class 对象
             Class<?> clazz = Class.forName(taskClassPath);
             // 检查是否实现了指定接口
-            if (interfaceClass.isAssignableFrom(clazz)) {
+            if (ExecutedTask.class.isAssignableFrom(clazz)) {
                 // 创建对象实例
-                instance = (ExecutedTask) clazz.getDeclaredConstructor().newInstance();
+                instance = (ExecutedTask<?>) clazz.getDeclaredConstructor().newInstance();
                 System.out.println("对象创建成功：" + instance);
             } else {
-                throw new IllegalArgumentException(taskClassPath + " 未实现接口 " + interfaceClass.getName());
+                throw new IllegalArgumentException(taskClassPath + " 未实现接口 " + ExecutedTask.class.getName());
             }
         } catch (Exception e) {
-
+            throw new RuntimeException("创建任务实例失败", e);
         }
+
         CronScheduleStrategy cronScheduleStrategy = new CronScheduleStrategy(cronExpression);
 
-        ScheduledTaskMetaData<Void> scheduledTaskMetaData =
+        ScheduledTaskMetaData<?> scheduledTaskMetaData =
                 new ScheduledTaskMetaData<>(taskId, taskName, cronScheduleStrategy, instance, null);
 
         addTask(scheduledTaskMetaData);
     }
 
-
     @Override
     public void addTask(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
         if (!scheduledTaskRegistry.containsTask(scheduledTaskMetaData.getTaskId())) {
-
+            try {
+                if (scheduledTaskMetaData.getExecutedTask() != null) {
+                    // 获取任务自定义属性和依赖注入的属性
+                    Map<String, Object> properties = TaskUtils.getProperties(scheduledTaskMetaData.getExecutedTask());
+                    scheduledTaskMetaData.setProperties(properties);
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
             scheduledTaskRegistry.registerTask(scheduledTaskMetaData.getTaskId(), scheduledTaskMetaData);
         }
-        log.info("");
     }
 
     @Override
