@@ -30,14 +30,17 @@ public class BeanManager {
      * <p>
      * 只注册一次BeanDefinition：对于同一个类，只注册一次BeanDefinition，无论要创建多少个实例。
      * 动态创建实例：根据需要动态创建每个实例
+     *
      * @param classPath
      */
     public void ensureBeanDefinitionRegistered(String classPath) {
         try {
-            ConfigurableApplicationContext configurableApplicationContext = (ConfigurableApplicationContext) applicationContext;
-            DefaultListableBeanFactory beanFactory = (DefaultListableBeanFactory) configurableApplicationContext.getBeanFactory();
-
-            String beanDefinitionName = classPath; // 用类路径作为定义名，以确保每种类只注册一次
+            ConfigurableApplicationContext configurableApplicationContext =
+                    (ConfigurableApplicationContext) applicationContext;
+            DefaultListableBeanFactory beanFactory =
+                    (DefaultListableBeanFactory) configurableApplicationContext.getBeanFactory();
+            // 用类路径作为定义名，以确保每种类只注册一次
+            String beanDefinitionName = classPath;
 
             if (!beanFactory.containsBeanDefinition(beanDefinitionName)) {
                 Class<?> clazz = null;
@@ -75,9 +78,10 @@ public class BeanManager {
                 (DefaultListableBeanFactory) ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
         if (beanFactory.containsSingleton(beanName)) {
             beanFactory.destroySingleton(beanName);
-            System.out.println("beanName:" + beanName + " instance destroyed.");
+            log.info("beanName: {} instance destroyed.", beanName);
+            System.out.println();
         } else {
-            System.out.println("beanName:" + beanName + " does not exist.");
+            log.info("beanName: {} does not exist.", beanName);
         }
     }
 
