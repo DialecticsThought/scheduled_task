@@ -42,7 +42,6 @@ public class TaskServiceImpl implements TaskService {
         } catch (Exception e) {
 
         }
-
         CronScheduleStrategy cronScheduleStrategy = new CronScheduleStrategy(cronExpression);
 
         ScheduledTaskMetaData<Void> scheduledTaskMetaData =
@@ -68,7 +67,8 @@ public class TaskServiceImpl implements TaskService {
                 scheduledTaskRegistry.deleteTask(taskId);
             }
         } catch (Exception e) {
-            // return "Error deleting task: " + e.getMessage();
+            log.error(e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -86,7 +86,8 @@ public class TaskServiceImpl implements TaskService {
                 taskEventPublisher.publishTaskEvent(taskMetaData);
             }
         } catch (Exception e) {
-            //return "Error executing task: " + e.getMessage();
+            log.error(e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -97,7 +98,8 @@ public class TaskServiceImpl implements TaskService {
                 scheduledTaskRegistry.cancelTask(taskId);
             }
         } catch (Exception e) {
-            // return "Error cancelling task: " + e.getMessage();
+            log.error(e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
     }
 }
