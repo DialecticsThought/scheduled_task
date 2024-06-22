@@ -6,22 +6,22 @@ import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.util.TaskUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @Description
- * 注册任务：
- *
+ * @Description 注册任务：
+ * <p>
  * 使用 getProperties 方法递归获取任务对象的所有自定义属性和依赖注入的属性。
  * 将所有属性序列化为 JSON 字符串，并存储在 TaskProperties 表中。
  * 将任务元数据存储到 Redis 哈希表中。
  * 恢复任务：
- *
+ * <p>
  * 从 Redis 哈希表中读取任务对象的类路径，并动态加载该类。
  * 实例化任务对象，并使用 Spring 容器注入其依赖。
  * 使用 setProperties 方法递归设置任务对象的所有自定义属性和依赖注入的属性。
@@ -33,16 +33,18 @@ import java.util.Map;
 public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry {
 
     private final RedisScheduledTaskRegistry redisScheduledTaskRegistry;
+    @Resource
+    private ApplicationContext applicationContext;
+    @Resource
+    private AutowireCapableBeanFactory beanFactory;
+
+    private ObjectMapper objectMapper = new ObjectMapper();
+
 
     @Autowired
     public EnhancedRedisScheduledTaskRegistry(RedisScheduledTaskRegistry redisScheduledTaskRegistry) {
         this.redisScheduledTaskRegistry = redisScheduledTaskRegistry;
     }
-
-    @Resource
-    private AutowireCapableBeanFactory beanFactory;
-
-    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public ScheduledTaskMetaData<?> getScheduledTaskMetaData(String taskId) {
@@ -87,6 +89,7 @@ public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry
     @Override
     public void deleteTask(String taskId) {
         redisScheduledTaskRegistry.deleteTask(taskId);
+        removeTaskFromSpringContainer(taskId);
     }
 
     @Override
@@ -104,4 +107,20 @@ public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry
         redisScheduledTaskRegistry.resetCanceled(taskId);
     }
 
+    private void removeTaskFromSpringContainer(String taskId) {
+/*        AutowireCapableBeanFactory beanFactory = applicationContext.getAutowireCapableBeanFactory();
+        if (beanFactory instanceof BeanDefinitionRegistry) {
+            BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+            if (registry.containsBeanDefinition(taskId)) {
+                registry.removeBeanDefinition(taskId);
+                System.out.println("任务对象已从容器中删除，taskId：" + taskId);
+            }
+        }*/
+        ConfigurableListableBeanFactory beanFactory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
+        Object bean = beanFactory.getBean(taskId);
+        if (bean != null) {
+            beanFactory.destroyBean(taskId, bean);
+            System.out.println("任务对象已从容器中删除，taskId：" + taskId);
+        }
+    }
 }

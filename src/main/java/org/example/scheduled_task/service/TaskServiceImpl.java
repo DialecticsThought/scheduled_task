@@ -9,6 +9,12 @@ import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
 import org.example.scheduled_task.quartz.registry.ScheduledTaskRegistry;
 import org.example.scheduled_task.quartz.util.TaskUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.beans.factory.support.BeanDefinitionBuilder;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -22,6 +28,10 @@ import java.util.Map;
 @Slf4j
 public class TaskServiceImpl implements TaskService {
     @Resource
+    private ApplicationContext applicationContext;
+    @Resource
+    private AutowireCapableBeanFactory beanFactory;
+    @Resource
     private TaskEventPublisher taskEventPublisher;
     @Resource
     private EnhancedRedisScheduledTaskRegistry scheduledTaskRegistry;
@@ -29,7 +39,11 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public void addTaskCompletely(String cronExpression, String taskId,
                                   String taskName, String taskClassPath) {
-        ExecutedTask<?> instance = null;
+        // 检查是否已有相同的taskId对象
+        if (((ConfigurableApplicationContext) applicationContext).getBeanFactory().containsSingleton(taskId)) {
+            throw new IllegalArgumentException("任务ID " + taskId + " 已经存在，请使用不同的任务ID。");
+        }
+        ExecutedTask instance = null;
         try {
             // 获取 Class 对象
             Class<?> clazz = Class.forName(taskClassPath);
@@ -37,7 +51,13 @@ public class TaskServiceImpl implements TaskService {
             if (ExecutedTask.class.isAssignableFrom(clazz)) {
                 // 创建对象实例
                 instance = (ExecutedTask<?>) clazz.getDeclaredConstructor().newInstance();
-                System.out.println("对象创建成功：" + instance);
+                // 使用 autowireBean 方法将对象的依赖注入到对象中
+                applicationContext.getAutowireCapableBeanFactory().autowireBean(instance);
+                // 注册Bean到Spring容器
+                ConfigurableApplicationContext configurableApplicationContext = (ConfigurableApplicationContext) applicationContext;
+                configurableApplicationContext.getBeanFactory().registerSingleton(taskId, instance);
+
+                System.out.println("对象创建并注入容器成功：" + instance);
             } else {
                 throw new IllegalArgumentException(taskClassPath + " 未实现接口 " + ExecutedTask.class.getName());
             }
@@ -49,6 +69,8 @@ public class TaskServiceImpl implements TaskService {
         Map<String, Object> properties = null;
         try {
             properties = TaskUtils.getProperties(instance);
+
+            System.out.println(properties);
         } catch (Exception e) {
             throw new RuntimeException("获取任务属性失败", e);
         }

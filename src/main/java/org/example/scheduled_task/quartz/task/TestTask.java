@@ -13,11 +13,11 @@ import java.time.LocalDateTime;
 public class TestTask implements ExecutedTask<Void> {
 
     @Resource
-    private SpringContextHolder springContextHolder;
+    private Test test;
 
     @Override
     public Void execute() {
-        System.out.println("hello,world" + LocalDateTime.now());
+        test.test();
         return null;
     }
 }
