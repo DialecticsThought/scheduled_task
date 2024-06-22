@@ -1,4 +1,4 @@
-package org.example.scheduled_task.entity;
+package org.example.scheduled_task.quartz.entity;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;

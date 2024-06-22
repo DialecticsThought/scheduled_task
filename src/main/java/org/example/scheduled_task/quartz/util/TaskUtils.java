@@ -1,6 +1,6 @@
 package org.example.scheduled_task.quartz.util;
 
-import org.example.scheduled_task.entity.SpringContextHolder;
+import org.example.scheduled_task.quartz.entity.SpringContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 

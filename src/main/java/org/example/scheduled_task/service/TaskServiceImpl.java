@@ -45,6 +45,13 @@ public class TaskServiceImpl implements TaskService {
             throw new RuntimeException("创建任务实例失败", e);
         }
 
+        // 获取任务实例的属性
+        Map<String, Object> properties = null;
+        try {
+            properties = TaskUtils.getProperties(instance);
+        } catch (Exception e) {
+            throw new RuntimeException("获取任务属性失败", e);
+        }
         CronScheduleStrategy cronScheduleStrategy = new CronScheduleStrategy(cronExpression);
 
         ScheduledTaskMetaData<?> scheduledTaskMetaData =
@@ -56,15 +63,6 @@ public class TaskServiceImpl implements TaskService {
     @Override
     public void addTask(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
         if (!scheduledTaskRegistry.containsTask(scheduledTaskMetaData.getTaskId())) {
-            try {
-                if (scheduledTaskMetaData.getExecutedTask() != null) {
-                    // 获取任务自定义属性和依赖注入的属性
-                    Map<String, Object> properties = TaskUtils.getProperties(scheduledTaskMetaData.getExecutedTask());
-                    scheduledTaskMetaData.setProperties(properties);
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
             scheduledTaskRegistry.registerTask(scheduledTaskMetaData.getTaskId(), scheduledTaskMetaData);
         }
     }
