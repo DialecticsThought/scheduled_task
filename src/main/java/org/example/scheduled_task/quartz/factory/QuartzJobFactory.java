@@ -3,6 +3,7 @@ package org.example.scheduled_task.quartz.factory;
 
 import jakarta.annotation.Resource;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
+import org.example.scheduled_task.quartz.registry.EnhancedRedisScheduledTaskRegistry;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
 import org.example.scheduled_task.quartz.registry.ScheduledTaskRegistry;
 import org.quartz.Job;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class QuartzJobFactory implements Job {
     @Resource
-    private ScheduledTaskRegistry scheduledTaskRegistry;
+    private EnhancedRedisScheduledTaskRegistry scheduledTaskRegistry;
 
     @Override
     public void execute(JobExecutionContext context) throws JobExecutionException {
