@@ -45,7 +45,7 @@ public class TaskServiceImpl implements TaskService {
         CronScheduleStrategy cronScheduleStrategy = new CronScheduleStrategy(cronExpression);
 
         ScheduledTaskMetaData<Void> scheduledTaskMetaData =
-                new ScheduledTaskMetaData<>(taskId, taskName, cronScheduleStrategy, instance);
+                new ScheduledTaskMetaData<>(taskId, taskName, cronScheduleStrategy, instance, null);
 
         addTask(scheduledTaskMetaData);
     }

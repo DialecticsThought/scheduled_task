@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import org.example.scheduled_task.quartz.strategy.ScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
 
+import java.util.Map;
+
 /**
  * @author jiahao.liu
  * @description 把 调度策略 和 任务执行 桥接起来
@@ -32,6 +34,11 @@ public class ScheduledTaskMetaData<T> {
      * 任务
      */
     private ExecutedTask<T> executedTask;
+    /**
+     * 任务属性
+     */
+    private Map<String, Object> properties;
+
 
     public T execute() {
         return executedTask.execute();
