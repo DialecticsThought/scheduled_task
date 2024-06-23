@@ -136,6 +136,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         ScheduledTask scheduledTask = scheduledTaskService.getOne(queryWrapper);
         if (scheduledTask != null) {
             scheduledTask.setDeleted(1);
+            scheduledTask.setTaskStatus(DELETED.toValue());
             scheduledTaskService.updateById(scheduledTask);
 
             removeTaskFromSpringContainer(taskId);
@@ -251,6 +252,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         }
         throw new IllegalArgumentException("Unsupported field type: " + fieldType.getName());
     }
+
 
     private ExecutedTask<?> instantiateAndInject(TaskClassInfo taskClassInfo, List<TaskClassProperties> properties, List<TaskClassDependencies> dependencies) {
         try {
