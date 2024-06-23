@@ -243,6 +243,8 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
             return Integer.parseInt(value);
         } else if (fieldType == long.class || fieldType == Long.class) {
             return Long.parseLong(value);
+        } else if (fieldType == float.class || fieldType == Field.class) {
+            return Float.parseFloat(value);
         } else if (fieldType == double.class || fieldType == Double.class) {
             return Double.parseDouble(value);
         } else if (fieldType == boolean.class || fieldType == Boolean.class) {
@@ -254,7 +256,9 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     }
 
 
-    private ExecutedTask<?> instantiateAndInject(TaskClassInfo taskClassInfo, List<TaskClassProperties> properties, List<TaskClassDependencies> dependencies) {
+    private ExecutedTask<?> instantiateAndInject(TaskClassInfo taskClassInfo,
+                                                 List<TaskClassProperties> properties,
+                                                 List<TaskClassDependencies> dependencies) {
         try {
             Class<?> taskClass = Class.forName(taskClassInfo.getTaskClassPath());
             ExecutedTask<?> taskInstance = (ExecutedTask<?>) taskClass.getDeclaredConstructor().newInstance();
@@ -322,7 +326,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         for (ScheduledTask scheduledTask : allTasks) {
             String taskId = scheduledTask.getTaskId();
             ScheduledTaskMetaData<?> metaData = loadTaskWithDependencies(taskId);
-            // Register the task in memory, possibly using a service or registry
+            // TODO ....
         }
     }
 }
