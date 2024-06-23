@@ -43,12 +43,11 @@ public class MemoryScheduledTaskRegistry implements ScheduledTaskRegistry{
     /**
      * 注册任务
      *
-     * @param taskId
      * @param scheduledTaskMetaData
      */
-    public void registerTask(String taskId, ScheduledTaskMetaData<?> scheduledTaskMetaData) {
-        taskMap.put(taskId, scheduledTaskMetaData);
-        taskStatusMap.put(taskId, TaskStatus.ADDED);
+    public void registerTask(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
+        taskMap.put(scheduledTaskMetaData.getTaskId(), scheduledTaskMetaData);
+        taskStatusMap.put(scheduledTaskMetaData.getTaskId(), TaskStatus.ADDED);
     }
 
     /**

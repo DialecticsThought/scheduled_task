@@ -52,7 +52,6 @@ public class TaskServiceImpl implements TaskService {
         } catch (Exception e) {
             throw new RuntimeException("创建任务实例失败", e);
         }
-
         // 获取任务实例的属性
         Map<String, Object> properties = null;
         try {
@@ -65,15 +64,17 @@ public class TaskServiceImpl implements TaskService {
         CronScheduleStrategy cronScheduleStrategy = new CronScheduleStrategy(cronExpression);
 
         ScheduledTaskMetaData<?> scheduledTaskMetaData =
-                new ScheduledTaskMetaData<>(taskId, taskName, cronScheduleStrategy, instance, null);
+                new ScheduledTaskMetaData<>(taskId, taskName, cronScheduleStrategy, instance, properties);
 
         addTask(scheduledTaskMetaData);
     }
 
+
+
     @Override
     public void addTask(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
         if (!scheduledTaskRegistry.containsTask(scheduledTaskMetaData.getTaskId())) {
-            scheduledTaskRegistry.registerTask(scheduledTaskMetaData.getTaskId(), scheduledTaskMetaData);
+            scheduledTaskRegistry.registerTask(scheduledTaskMetaData);
         }
     }
 
@@ -89,6 +90,11 @@ public class TaskServiceImpl implements TaskService {
         }
     }
 
+    /**
+     * TODO 重点 在这里执行任务，本质是发布事件，监听器收到事件，把事件对象中的任务信息注册
+     *
+     * @param taskId
+     */
     @Override
     public void executeTask(String taskId) {
         try {

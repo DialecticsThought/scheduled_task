@@ -22,9 +22,9 @@ import java.util.Map;
 @Component
 public class RedisScheduledTaskRegistry implements ScheduledTaskRegistry {
 
-    private static final String TASK_META_DATA_KEY_PREFIX = "taskMetaData:";
+    private static final String TASK_META_DATA_KEY_PREFIX = "taskMetaData";
 
-    private static final String TASK_STATUS_KEY_PREFIX = "taskStatus:";
+    private static final String TASK_STATUS_KEY_PREFIX = "taskStatus";
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -45,9 +45,9 @@ public class RedisScheduledTaskRegistry implements ScheduledTaskRegistry {
     }
 
     @Override
-    public void registerTask(String taskId, ScheduledTaskMetaData<?> scheduledTaskMetaData) {
-        hashOps.put(TASK_META_DATA_KEY_PREFIX, taskId, scheduledTaskMetaData);
-        hashOps.put(TASK_STATUS_KEY_PREFIX, taskId, TaskStatus.ADDED.toValue());
+    public void registerTask(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
+        hashOps.put(TASK_META_DATA_KEY_PREFIX, scheduledTaskMetaData.getTaskId(), scheduledTaskMetaData);
+        hashOps.put(TASK_STATUS_KEY_PREFIX, scheduledTaskMetaData.getTaskId(), TaskStatus.ADDED.toValue());
     }
 
     @Override
@@ -72,6 +72,7 @@ public class RedisScheduledTaskRegistry implements ScheduledTaskRegistry {
         if (containsTask(taskId)) {
             Scheduler scheduler = schedulerFactoryBean.getScheduler();
             try {
+                //TODO 只有执行状态下面 quartz才会有任务信息对象
                 scheduler.deleteJob(new JobKey(taskId));
             } catch (SchedulerException e) {
                 throw new RuntimeException(e);
@@ -85,7 +86,9 @@ public class RedisScheduledTaskRegistry implements ScheduledTaskRegistry {
         if (containsTask(taskId)) {
             cancelTask(taskId);
             removeTask(taskId);
-            hashOps.put(TASK_STATUS_KEY_PREFIX, taskId, TaskStatus.DELETED.toValue());
+            // 设置状态位 还是真实地删去  2选1
+            //hashOps.put(TASK_STATUS_KEY_PREFIX, taskId, TaskStatus.DELETED.toValue());
+            hashOps.delete(TASK_STATUS_KEY_PREFIX, taskId);
         }
     }
 
@@ -94,6 +97,11 @@ public class RedisScheduledTaskRegistry implements ScheduledTaskRegistry {
         return TaskStatus.CANCELED.equals(getTaskStatus(taskId));
     }
 
+    /**
+     * TASK_META_DATA_KEY_PREFIX这个map中是否存在taskId为key的人物
+     * @param taskId
+     * @return
+     */
     @Override
     public boolean isDeleted(String taskId) {
         return !containsTask(taskId);

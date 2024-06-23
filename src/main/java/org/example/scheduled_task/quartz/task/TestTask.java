@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Scope;
  * @description
  * @date 2024/06/11 19:12
  */
-@Scope("prototype")
+@Scope("prototype")// 所有任务类都要加上
 public class TestTask implements ExecutedTask<Void> {
 
     @Resource

@@ -8,10 +8,10 @@ import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.entity.BeanManager;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.service.TaskService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -40,11 +40,8 @@ public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry
     private ApplicationContext applicationContext;
     @Resource
     private BeanManager beanManager;
-    @Resource
-    private TaskService taskService;
 
     private ObjectMapper objectMapper = new ObjectMapper();
-
 
     @Autowired
     public EnhancedRedisScheduledTaskRegistry(RedisScheduledTaskRegistry redisScheduledTaskRegistry) {
@@ -57,7 +54,7 @@ public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry
     }
 
     @Override
-    public void registerTask(String taskId, ScheduledTaskMetaData<?> scheduledTaskMetaData) {
+    public void registerTask(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
         try {
             if (scheduledTaskMetaData.getExecutedTask() != null) {
                 // 获取任务自定义属性和依赖注入的属性
@@ -67,7 +64,7 @@ public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        redisScheduledTaskRegistry.registerTask(taskId, scheduledTaskMetaData);
+        redisScheduledTaskRegistry.registerTask(scheduledTaskMetaData);
     }
 
 
@@ -117,6 +114,9 @@ public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry
         beanManager.removeBeanByName(beanName);
     }
 
+    /**
+     * 待定
+     */
     public void initializeTasksFromRedis() {
         // 从Redis中读取所有任务ID
         Map<String, ScheduledTaskMetaData<?>> allTasks = redisScheduledTaskRegistry.getAllTasks();
@@ -125,15 +125,15 @@ public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry
             ScheduledTaskMetaData<?> metaData = entry.getValue();
             // 从Redis中读取任务状态
             TaskStatus taskStatus = redisScheduledTaskRegistry.getTaskStatus(taskId);
-
-            CronScheduleStrategy scheduleStrategy = (CronScheduleStrategy) metaData.getScheduleStrategy();
             // 重新创建任务对象并注册
             try {
-                taskService.addTaskCompletely(scheduleStrategy.getCronExpression(),
-                        taskId, metaData.getTaskName(), metaData.getExecutedTask().getClass().getName());
+                // 检查是否已有相同的taskId对象
+                if (((ConfigurableApplicationContext) applicationContext).getBeanFactory().containsSingleton(taskId)) {
+                    log.info("任务ID: {} 已经存在，请使用不同的任务ID。", taskId);
+
+                }
             } catch (Exception e) {
-                System.err.println("重新创建任务失败，taskId：" + taskId);
-                e.printStackTrace();
+                log.error("重新创建任务失败，taskId：{}", taskId);
             }
         }
     }

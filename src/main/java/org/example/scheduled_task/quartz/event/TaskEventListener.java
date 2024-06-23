@@ -30,20 +30,17 @@ public class TaskEventListener {
     public void handleTaskEvent(TaskEvent taskEvent) {
 
         ScheduledTaskMetaData<?> scheduledTaskMetaData = taskEvent.getScheduledTaskMetaData();
-
+        // 注册中心是否有这个任务，没有这个任务不能执行
         if (scheduledTaskRegistry.containsTask(scheduledTaskMetaData.getTaskId())) {
+            //scheduledTaskRegistry.registerTask(scheduledTaskMetaData);
+            //TODO 核心
+            scheduleJob(scheduledTaskMetaData);
 
-            if (!scheduledTaskRegistry.isDeleted(scheduledTaskMetaData.getTaskId())) {
-
-                scheduledTaskRegistry.registerTask(scheduledTaskMetaData.getTaskId(), scheduledTaskMetaData);
-
-                scheduleJob(scheduledTaskMetaData);
-            }
         }
     }
 
     /**
-     * 把任务祖册到Quartz调度器里面
+     * 把任务注册到Quartz调度器里面
      */
     private void scheduleJob(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
 

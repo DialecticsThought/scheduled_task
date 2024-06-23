@@ -10,7 +10,7 @@ import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 public interface TaskService {
 
     void addTaskCompletely(String cronExpression, String taskId,
-                           String taskName, String taskClassPath);
+                                    String taskName, String taskClassPath);
 
     void addTask(ScheduledTaskMetaData<?> scheduledTaskMetaData);
 

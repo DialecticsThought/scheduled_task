@@ -19,10 +19,9 @@ public interface ScheduledTaskRegistry {
     /**
      * 注册任务
      *
-     * @param taskId
      * @param scheduledTaskMetaData
      */
-    void registerTask(String taskId, ScheduledTaskMetaData<?> scheduledTaskMetaData);
+    void registerTask(ScheduledTaskMetaData<?> scheduledTaskMetaData);
 
     /**
      * 标记任务已经执行

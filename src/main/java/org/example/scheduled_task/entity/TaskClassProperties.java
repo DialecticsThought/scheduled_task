@@ -2,7 +2,6 @@ package org.example.scheduled_task.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,27 +9,28 @@ import lombok.NoArgsConstructor;
 /**
  * @Description
  * @Author veritas
- * @Data 2024/6/22 15:48
+ * @Data 2024/6/23 13:49
  */
 @NoArgsConstructor
 @Data
 @AllArgsConstructor
-@TableName("task_properties")
-public class TaskProperties {
+public class TaskClassProperties {
     @TableId(type = IdType.AUTO)
     private Long id;
     /**
-     * 外键，关联ScheduledTask表的taskId
+     * 外键，关联taskClassInfo表的id
      */
-    private String taskId;
-    /**
-     * 类路径
-     */
-    private String taskClassPath;
+    private Long taskClassInfoId;
     /**
      * JSON字符串形式存储属性
      */
-    private String properties;
-
+    private String propertyName;
+    /**
+     *
+     */
+    private String propertyValue;
+    /**
+     * 删除标志位
+     */
     private Integer deleted;
 }
