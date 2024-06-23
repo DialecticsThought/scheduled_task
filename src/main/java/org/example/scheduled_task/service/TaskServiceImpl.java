@@ -2,6 +2,7 @@ package org.example.scheduled_task.service;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.example.scheduled_task.entity.CoarseScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.entity.BeanManager;
 import org.example.scheduled_task.quartz.event.TaskEventPublisher;
@@ -12,6 +13,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 
 /**
@@ -32,8 +34,13 @@ public class TaskServiceImpl implements TaskService {
     private EnhancedRedisScheduledTaskRegistry scheduledTaskRegistry;
 
     @Override
-    public void addTaskCompletely(String cronExpression, String taskId,
-                                  String taskName, String taskClassPath) {
+    public void addTaskCompletely(CoarseScheduledTaskMetaData coarseScheduledTaskMetaData) {
+        String taskId = coarseScheduledTaskMetaData.getTaskId();
+        String taskClassPath = coarseScheduledTaskMetaData.getTaskClassPath();
+        String cronExpression = coarseScheduledTaskMetaData.getCronExpression();
+        String taskName = coarseScheduledTaskMetaData.getTaskName();
+        Map<String, Object> properties = coarseScheduledTaskMetaData.getProperties();
+
         // 检查是否已有相同的taskId对象
         if (((ConfigurableApplicationContext) applicationContext).getBeanFactory().containsSingleton(taskId)) {
             throw new IllegalArgumentException("任务ID " + taskId + " 已经存在，请使用不同的任务ID。");
@@ -52,15 +59,37 @@ public class TaskServiceImpl implements TaskService {
         } catch (Exception e) {
             throw new RuntimeException("创建任务实例失败", e);
         }
+        // 将 instance 的引用赋值给一个局部变量 finalInstance，
+        // 可以避免在 lambda 表达式中直接使用 instance，并且无需将 instance 声明为 final。
+        ExecutedTask finalInstance = instance;
+
+        // 使用传入的properties参数给ExecutedTask实例赋值
+        if (properties != null) {
+            properties.forEach((key, value) -> {
+                try {
+                    // 获取对应的字段
+                    Field field = getField(finalInstance.getClass(), key);
+                    if (field != null) {
+                        field.setAccessible(true);
+                        field.set(finalInstance, value);
+                    } else {
+                        throw new NoSuchFieldException("Field " + key + " not found in class " + finalInstance.getClass().getName());
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException("设置属性 " + key + " 失败", e);
+                }
+            });
+        }
+
         // 获取任务实例的属性
-        Map<String, Object> properties = null;
-        try {
+        //Map<String, Object> properties = null;
+/*        try {
             properties = BeanManager.getProperties(instance);
 
             System.out.println(properties);
         } catch (Exception e) {
             throw new RuntimeException("获取任务属性失败", e);
-        }
+        }*/
         CronScheduleStrategy cronScheduleStrategy = new CronScheduleStrategy(cronExpression);
 
         ScheduledTaskMetaData<?> scheduledTaskMetaData =
@@ -69,6 +98,17 @@ public class TaskServiceImpl implements TaskService {
         addTask(scheduledTaskMetaData);
     }
 
+    // 辅助方法，用于在类层次结构中查找字段
+    private Field getField(Class<?> clazz, String fieldName) {
+        while (clazz != null) {
+            try {
+                return clazz.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        return null;
+    }
 
 
     @Override

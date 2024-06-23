@@ -4,7 +4,6 @@ import jakarta.annotation.Resource;
 import org.springframework.context.annotation.Scope;
 
 
-
 /**
  * @author jiahao.liu
  * @description
@@ -15,6 +14,10 @@ public class TestTask implements ExecutedTask<Void> {
 
     @Resource
     private Test test;
+
+    private Integer a;
+
+    private String b;
 
     @Override
     public Void execute() {

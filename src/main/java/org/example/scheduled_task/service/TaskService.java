@@ -1,5 +1,6 @@
 package org.example.scheduled_task.service;
 
+import org.example.scheduled_task.entity.CoarseScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 
 /**
@@ -9,8 +10,7 @@ import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
  */
 public interface TaskService {
 
-    void addTaskCompletely(String cronExpression, String taskId,
-                                    String taskName, String taskClassPath);
+    void addTaskCompletely(CoarseScheduledTaskMetaData coarseScheduledTaskMetaData);
 
     void addTask(ScheduledTaskMetaData<?> scheduledTaskMetaData);
 

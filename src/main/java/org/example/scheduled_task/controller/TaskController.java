@@ -2,6 +2,7 @@ package org.example.scheduled_task.controller;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.example.scheduled_task.entity.CoarseScheduledTaskMetaData;
 import org.example.scheduled_task.service.TaskService;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,18 +21,11 @@ public class TaskController {
     /**
      * 添加任务
      *
-     * @param cronExpression
-     * @param taskId
-     * @param taskName
      * @return
      */
-    @GetMapping("/add")
-    public String addTask(@RequestParam("cronExpression") String cronExpression,
-                          @RequestParam("taskId") String taskId,
-                          @RequestParam("taskName") String taskName,
-                          @RequestParam("taskClassPath") String taskClassPath) {
-
-        taskService.addTaskCompletely(cronExpression, taskId, taskName, taskClassPath);
+    @PostMapping("/add")
+    public String addTask(@RequestBody CoarseScheduledTaskMetaData coarseScheduledTaskMetaData) {
+        taskService.addTaskCompletely(coarseScheduledTaskMetaData);
         return "add";
     }
 
