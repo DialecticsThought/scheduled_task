@@ -2,8 +2,12 @@ package org.example.scheduled_task.quartz.registry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
+import org.example.scheduled_task.quartz.TaskStatus;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.entity.BeanManager;
+import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
+import org.example.scheduled_task.service.TaskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,14 +32,16 @@ import java.util.Map;
  * @Data 2024/6/22 16:44
  */
 @Component
+@Slf4j
 public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry {
 
-    private static final Logger log = LoggerFactory.getLogger(EnhancedRedisScheduledTaskRegistry.class);
     private final RedisScheduledTaskRegistry redisScheduledTaskRegistry;
     @Resource
     private ApplicationContext applicationContext;
     @Resource
     private BeanManager beanManager;
+    @Resource
+    private TaskService taskService;
 
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -109,5 +115,26 @@ public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry
     private void removeTaskFromSpringContainer(String taskId) {
         String beanName = taskId + ":quartz_task";
         beanManager.removeBeanByName(beanName);
+    }
+
+    public void initializeTasksFromRedis() {
+        // 从Redis中读取所有任务ID
+        Map<String, ScheduledTaskMetaData<?>> allTasks = redisScheduledTaskRegistry.getAllTasks();
+        for (Map.Entry<String, ScheduledTaskMetaData<?>> entry : allTasks.entrySet()) {
+            String taskId = entry.getKey();
+            ScheduledTaskMetaData<?> metaData = entry.getValue();
+            // 从Redis中读取任务状态
+            TaskStatus taskStatus = redisScheduledTaskRegistry.getTaskStatus(taskId);
+
+            CronScheduleStrategy scheduleStrategy = (CronScheduleStrategy) metaData.getScheduleStrategy();
+            // 重新创建任务对象并注册
+            try {
+                taskService.addTaskCompletely(scheduleStrategy.getCronExpression(),
+                        taskId, metaData.getTaskName(), metaData.getExecutedTask().getClass().getName());
+            } catch (Exception e) {
+                System.err.println("重新创建任务失败，taskId：" + taskId);
+                e.printStackTrace();
+            }
+        }
     }
 }

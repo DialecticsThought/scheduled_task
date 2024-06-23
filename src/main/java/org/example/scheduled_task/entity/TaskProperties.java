@@ -31,4 +31,6 @@ public class TaskProperties {
      * JSON字符串形式存储属性
      */
     private String properties;
+
+    private Integer deleted;
 }

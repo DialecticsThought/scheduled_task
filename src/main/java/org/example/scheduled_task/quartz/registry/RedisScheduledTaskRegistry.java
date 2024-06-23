@@ -12,6 +12,8 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 /**
  * @Description
  * @Author jiahao.liu
@@ -104,8 +106,12 @@ public class RedisScheduledTaskRegistry implements ScheduledTaskRegistry {
         }
     }
 
-    private TaskStatus getTaskStatus(String taskId) {
+    public TaskStatus getTaskStatus(String taskId) {
         String status = (String) hashOps.get(TASK_STATUS_KEY_PREFIX, taskId);
         return TaskStatus.valueOf(status);
+    }
+
+    public Map getAllTasks() {
+        return hashOps.entries(TASK_META_DATA_KEY_PREFIX);
     }
 }

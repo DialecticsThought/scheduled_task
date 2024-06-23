@@ -27,4 +27,6 @@ public class ScheduledTask {
     private String cronExpression;
 
     private String taskStatus;
+
+    private Integer deleted;
 }

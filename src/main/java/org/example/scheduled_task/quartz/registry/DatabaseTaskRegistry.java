@@ -11,10 +11,13 @@ import org.example.scheduled_task.mapper.TaskPropertiesMapper;
 import org.example.scheduled_task.quartz.TaskStatus;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.entity.BeanManager;
+import org.example.scheduled_task.quartz.strategy.ScheduleStrategy;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
+import org.example.scheduled_task.service.TaskService;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -42,6 +45,12 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     @Resource
     private AutowireCapableBeanFactory beanFactory;
 
+    @Resource
+    private BeanManager beanManager;
+
+    @Resource
+    private TaskService taskService;
+
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -49,7 +58,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         // 根据taskId从数据库中查询任务
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("task_id", taskId);
-        ScheduledTask taskEntity = taskMapper.selectOne(queryWrapper);
+        ScheduledTask scheduledTask = taskMapper.selectOne(queryWrapper);
 
         // 根据taskId从task_properties表中查询任务属性
         QueryWrapper<TaskProperties> propertiesQueryWrapper = new QueryWrapper<>();
@@ -57,8 +66,8 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         TaskProperties taskProperties = taskPropertiesMapper.selectOne(propertiesQueryWrapper);
 
         // 如果任务实体和任务属性都存在，则转换为ScheduledTaskMetaData对象
-        if (taskEntity != null && taskProperties != null) {
-            return convertToMetaData(taskEntity, taskProperties);
+        if (scheduledTask != null && taskProperties != null) {
+            return convertToMetaData(scheduledTask, taskProperties);
         }
         return null;
     }
@@ -66,9 +75,9 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     @Override
     public void registerTask(String taskId, ScheduledTaskMetaData<?> scheduledTaskMetaData) {
         // 将ScheduledTaskMetaData对象转换为ScheduledTask实体并插入到数据库
-        ScheduledTask taskEntity = convertToEntity(scheduledTaskMetaData);
-        taskEntity.setTaskStatus(TaskStatus.ADDED.toValue());
-        taskMapper.insert(taskEntity);
+        ScheduledTask scheduledTask = convertToEntity(scheduledTaskMetaData);
+        scheduledTask.setTaskStatus(TaskStatus.ADDED.toValue());
+        taskMapper.insert(scheduledTask);
 
         // 创建TaskProperties对象并插入到数据库
         TaskProperties taskProperties = new TaskProperties();
@@ -93,13 +102,14 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     public void markExecute(String taskId) {
         // 根据taskId查询ScheduledTask实体
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("task_id", taskId);
-        ScheduledTask taskEntity = taskMapper.selectOne(queryWrapper);
+        queryWrapper.eq("task_id", taskId).eq("deleted", 0);
+        ;
+        ScheduledTask scheduledTask = taskMapper.selectOne(queryWrapper);
 
         // 如果任务实体存在并且状态不是已执行，则更新状态为已执行
-        if (taskEntity != null && !TaskStatus.EXECUTED.toValue().equals(taskEntity.getTaskStatus())) {
-            taskEntity.setTaskStatus(TaskStatus.EXECUTED.toValue());
-            taskMapper.updateById(taskEntity);
+        if (scheduledTask != null && !TaskStatus.EXECUTED.toValue().equals(scheduledTask.getTaskStatus())) {
+            scheduledTask.setTaskStatus(TaskStatus.EXECUTED.toValue());
+            taskMapper.updateById(scheduledTask);
         }
     }
 
@@ -107,8 +117,14 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     public void removeTask(String taskId) {
         // 根据taskId删除ScheduledTask实体
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("task_id", taskId);
-        taskMapper.delete(queryWrapper);
+        queryWrapper.eq("task_id", taskId).eq("deleted", 0);
+        ScheduledTask scheduledTask = taskMapper.selectOne(queryWrapper);
+        if (scheduledTask != null) {
+            scheduledTask.setDeleted(1);
+            taskMapper.updateById(scheduledTask);
+
+            removeTaskFromSpringContainer(taskId);
+        }
 
         // 根据taskId删除TaskProperties实体
         QueryWrapper<TaskProperties> propertiesQueryWrapper = new QueryWrapper<>();
@@ -120,59 +136,61 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     public boolean containsTask(String taskId) {
         // 根据taskId查询ScheduledTask实体，判断任务是否存在
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("task_id", taskId);
+        queryWrapper.eq("task_id", taskId).eq("deleted", 0);
         return taskMapper.selectOne(queryWrapper) != null;
     }
 
     @Override
-    public void cancelTask(String taskId)  {
+    public void cancelTask(String taskId) {
         // 根据taskId查询ScheduledTask实体
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("task_id", taskId);
-        ScheduledTask taskEntity = taskMapper.selectOne(queryWrapper);
+        ScheduledTask scheduledTask = taskMapper.selectOne(queryWrapper);
 
         // 如果任务实体存在，则更新状态为已取消
-        if (taskEntity != null) {
-            taskEntity.setTaskStatus(TaskStatus.CANCELED.toValue());
-            taskMapper.updateById(taskEntity);
+        if (scheduledTask != null) {
+            scheduledTask.setTaskStatus(TaskStatus.CANCELED.toValue());
+            taskMapper.updateById(scheduledTask);
         }
     }
 
     @Override
     public void deleteTask(String taskId) {
-        // 根据taskId查询ScheduledTask实体
+/*        // 根据taskId查询ScheduledTask实体
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("task_id", taskId);
-        ScheduledTask taskEntity = taskMapper.selectOne(queryWrapper);
+        ScheduledTask scheduledTask = taskMapper.selectOne(queryWrapper);
 
         // 如果任务实体存在，则更新状态为已删除，并删除任务实体和属性
-        if (taskEntity != null) {
-            taskEntity.setTaskStatus(TaskStatus.DELETED.toValue());
-            taskMapper.updateById(taskEntity);
+        if (scheduledTask != null) {
+            scheduledTask.setTaskStatus(TaskStatus.DELETED.toValue());
+            taskMapper.updateById(scheduledTask);
 
             taskMapper.delete(queryWrapper);
 
             QueryWrapper<TaskProperties> propertiesQueryWrapper = new QueryWrapper<>();
             propertiesQueryWrapper.eq("task_id", taskId);
             taskPropertiesMapper.delete(propertiesQueryWrapper);
-        }
+        }*/
+        cancelTask(taskId);
+        removeTask(taskId);
     }
 
     @Override
     public boolean isCanceled(String taskId) {
         // 根据taskId查询ScheduledTask实体，判断任务是否已取消
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("task_id", taskId);
-        ScheduledTask taskEntity = taskMapper.selectOne(queryWrapper);
+        queryWrapper.eq("task_id", taskId).eq("deleted", 0);
+        ScheduledTask scheduledTask = taskMapper.selectOne(queryWrapper);
 
-        return taskEntity != null && TaskStatus.CANCELED.toValue().equals(taskEntity.getTaskStatus());
+        return scheduledTask != null && TaskStatus.CANCELED.toValue().equals(scheduledTask.getTaskStatus());
     }
 
     @Override
     public boolean isDeleted(String taskId) {
         // 根据taskId查询ScheduledTask实体，判断任务是否已删除
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("task_id", taskId);
+        queryWrapper.eq("task_id", taskId).eq("deleted", 1);
         return taskMapper.selectOne(queryWrapper) == null;
     }
 
@@ -180,23 +198,23 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     public void resetCanceled(String taskId) {
         // 根据taskId查询ScheduledTask实体
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("task_id", taskId);
-        ScheduledTask taskEntity = taskMapper.selectOne(queryWrapper);
+        queryWrapper.eq("task_id", taskId).eq("deleted", 0);
+        ScheduledTask scheduledTask = taskMapper.selectOne(queryWrapper);
 
         // 如果任务实体存在且状态为已取消，则重置状态为已添加
-        if (taskEntity != null && TaskStatus.CANCELED.toValue().equals(taskEntity.getTaskStatus())) {
-            taskEntity.setTaskStatus(TaskStatus.ADDED.toValue());
-            taskMapper.updateById(taskEntity);
+        if (scheduledTask != null && TaskStatus.CANCELED.toValue().equals(scheduledTask.getTaskStatus())) {
+            scheduledTask.setTaskStatus(TaskStatus.ADDED.toValue());
+            taskMapper.updateById(scheduledTask);
         }
     }
 
     private ScheduledTask convertToEntity(ScheduledTaskMetaData<?> metaData) {
         // 将ScheduledTaskMetaData对象转换为ScheduledTask实体
-        ScheduledTask taskEntity = new ScheduledTask();
-        taskEntity.setTaskId(metaData.getTaskId());
-        taskEntity.setTaskName(metaData.getTaskName());
-        taskEntity.setCronExpression(((CronScheduleStrategy) metaData.getScheduleStrategy()).getCronExpression());
-        return taskEntity;
+        ScheduledTask scheduledTask = new ScheduledTask();
+        scheduledTask.setTaskId(metaData.getTaskId());
+        scheduledTask.setTaskName(metaData.getTaskName());
+        scheduledTask.setCronExpression(((CronScheduleStrategy) metaData.getScheduleStrategy()).getCronExpression());
+        return scheduledTask;
     }
 
     private ScheduledTaskMetaData<?> convertToMetaData(ScheduledTask taskEntity, TaskProperties taskProperties) {
@@ -210,22 +228,49 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
             // 动态加载任务类并实例化
             Class<?> taskClass = Class.forName(taskProperties.getTaskClassPath());
             ExecutedTask taskInstance = (ExecutedTask) taskClass.getDeclaredConstructor().newInstance();
-
             // 注入Spring容器中的依赖
             beanFactory.autowireBean(taskInstance);
-
             // 如果存在属性，则反序列化属性并设置到任务实例中
             if (taskProperties.getProperties() != null) {
                 Map<String, Object> properties = objectMapper.readValue(taskProperties.getProperties(), Map.class);
                 BeanManager.setProperties(taskInstance, properties);
                 metaData.setProperties(properties);
             }
-
             metaData.setExecutedTask(taskInstance);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
         return metaData;
+    }
+
+    private void removeTaskFromSpringContainer(String taskId) {
+        String beanName = taskId + ":quartz_task";
+        beanManager.removeBeanByName(beanName);
+    }
+
+
+    public void initializeTasksFromDatabase() {
+        QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("deleted", false);
+        List<ScheduledTask> allTasks = taskMapper.selectList(queryWrapper);
+        for (ScheduledTask scheduledTask : allTasks) {
+            String taskId = scheduledTask.getTaskId();
+            QueryWrapper<TaskProperties> propertiesQueryWrapper = new QueryWrapper<>();
+            propertiesQueryWrapper.eq("task_id", taskId);
+            TaskProperties taskProperties = taskPropertiesMapper.selectOne(propertiesQueryWrapper);
+            if (taskProperties != null) {
+                ScheduledTaskMetaData<?> metaData = convertToMetaData(scheduledTask, taskProperties);
+
+
+                CronScheduleStrategy scheduleStrategy = (CronScheduleStrategy) metaData.getScheduleStrategy();
+                try {
+                    taskService.addTaskCompletely(scheduleStrategy.getCronExpression(),
+                            taskId, metaData.getTaskName(), metaData.getExecutedTask().getClass().getName());
+                } catch (Exception e) {
+                    System.err.println("重新创建任务失败，taskId：" + taskId);
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 }
