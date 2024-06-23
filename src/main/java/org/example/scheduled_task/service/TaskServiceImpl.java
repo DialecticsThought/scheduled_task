@@ -8,12 +8,6 @@ import org.example.scheduled_task.quartz.event.TaskEventPublisher;
 import org.example.scheduled_task.quartz.registry.EnhancedRedisScheduledTaskRegistry;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
-import org.example.scheduled_task.quartz.registry.ScheduledTaskRegistry;
-import org.example.scheduled_task.quartz.util.TaskUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
-import org.springframework.beans.factory.support.BeanDefinitionBuilder;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
@@ -62,7 +56,7 @@ public class TaskServiceImpl implements TaskService {
         // 获取任务实例的属性
         Map<String, Object> properties = null;
         try {
-            properties = TaskUtils.getProperties(instance);
+            properties = BeanManager.getProperties(instance);
 
             System.out.println(properties);
         } catch (Exception e) {

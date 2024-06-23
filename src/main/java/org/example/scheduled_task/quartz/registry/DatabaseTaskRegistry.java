@@ -10,13 +10,11 @@ import org.example.scheduled_task.mapper.ScheduledTaskMapper;
 import org.example.scheduled_task.mapper.TaskPropertiesMapper;
 import org.example.scheduled_task.quartz.TaskStatus;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
+import org.example.scheduled_task.quartz.entity.BeanManager;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
-import org.example.scheduled_task.quartz.util.TaskUtils;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.Map;
 
 
@@ -82,7 +80,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
                 taskProperties.setTaskClassPath(taskClassPath);
 
                 // 获取任务属性
-                Map<String, Object> properties = TaskUtils.getProperties(scheduledTaskMetaData.getExecutedTask());
+                Map<String, Object> properties = BeanManager.getProperties(scheduledTaskMetaData.getExecutedTask());
                 taskProperties.setProperties(objectMapper.writeValueAsString(properties));
             }
         } catch (Exception e) {
@@ -219,7 +217,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
             // 如果存在属性，则反序列化属性并设置到任务实例中
             if (taskProperties.getProperties() != null) {
                 Map<String, Object> properties = objectMapper.readValue(taskProperties.getProperties(), Map.class);
-                TaskUtils.setProperties(taskInstance, properties);
+                BeanManager.setProperties(taskInstance, properties);
                 metaData.setProperties(properties);
             }
 

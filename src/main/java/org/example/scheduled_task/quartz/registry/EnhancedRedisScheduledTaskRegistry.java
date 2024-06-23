@@ -4,14 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.Resource;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.entity.BeanManager;
-import org.example.scheduled_task.quartz.util.TaskUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
@@ -59,7 +55,7 @@ public class EnhancedRedisScheduledTaskRegistry implements ScheduledTaskRegistry
         try {
             if (scheduledTaskMetaData.getExecutedTask() != null) {
                 // 获取任务自定义属性和依赖注入的属性
-                Map<String, Object> properties = TaskUtils.getProperties(scheduledTaskMetaData.getExecutedTask());
+                Map<String, Object> properties = BeanManager.getProperties(scheduledTaskMetaData.getExecutedTask());
                 scheduledTaskMetaData.setProperties(properties);
             }
         } catch (Exception e) {
