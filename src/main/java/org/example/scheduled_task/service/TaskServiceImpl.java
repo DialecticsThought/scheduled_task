@@ -59,10 +59,11 @@ public class TaskServiceImpl implements TaskService {
         } catch (Exception e) {
             throw new RuntimeException("创建任务实例失败", e);
         }
+        // TODO 如果对象有依赖注入，交给容器管理之后，会自动注入
+
         // 将 instance 的引用赋值给一个局部变量 finalInstance，
         // 可以避免在 lambda 表达式中直接使用 instance，并且无需将 instance 声明为 final。
         ExecutedTask finalInstance = instance;
-
         // 使用传入的properties参数给ExecutedTask实例赋值
         if (properties != null) {
             properties.forEach((key, value) -> {
@@ -80,16 +81,6 @@ public class TaskServiceImpl implements TaskService {
                 }
             });
         }
-
-        // 获取任务实例的属性
-        //Map<String, Object> properties = null;
-/*        try {
-            properties = BeanManager.getProperties(instance);
-
-            System.out.println(properties);
-        } catch (Exception e) {
-            throw new RuntimeException("获取任务属性失败", e);
-        }*/
         CronScheduleStrategy cronScheduleStrategy = new CronScheduleStrategy(cronExpression);
 
         ScheduledTaskMetaData<?> scheduledTaskMetaData =

@@ -3,8 +3,6 @@ package org.example.scheduled_task.entity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.example.scheduled_task.quartz.strategy.ScheduleStrategy;
-import org.example.scheduled_task.quartz.task.ExecutedTask;
 
 import java.util.Map;
 
