@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @AllArgsConstructor
+@TableName("task_class_dependencies")
 public class TaskClassDependencies {
     @TableId(type = IdType.AUTO)
     private Long id;

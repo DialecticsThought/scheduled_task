@@ -4,6 +4,7 @@ package org.example.scheduled_task.quartz.event;
 import jakarta.annotation.Resource;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.factory.QuartzJobFactory;
+import org.example.scheduled_task.quartz.registry.DatabaseTaskRegistry;
 import org.example.scheduled_task.quartz.registry.EnhancedRedisScheduledTaskRegistry;
 import org.example.scheduled_task.quartz.registry.ScheduledTaskRegistry;
 import org.quartz.*;
@@ -21,7 +22,7 @@ import org.springframework.stereotype.Component;
 public class TaskEventListener {
     // 服务注册中心
     @Resource
-    private EnhancedRedisScheduledTaskRegistry scheduledTaskRegistry;
+    private DatabaseTaskRegistry scheduledTaskRegistry;
     // QuartzConfig注册的,必须要用Autowired
     @Autowired
     private SchedulerFactoryBean schedulerFactoryBean;

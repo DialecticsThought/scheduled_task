@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Data
 @AllArgsConstructor
-@TableName("task_properties")
+@TableName("task_class_info")
 public class TaskClassInfo {
     @TableId(type = IdType.AUTO)
     private Long id;

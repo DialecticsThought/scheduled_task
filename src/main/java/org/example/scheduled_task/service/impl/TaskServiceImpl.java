@@ -1,4 +1,4 @@
-package org.example.scheduled_task.service;
+package org.example.scheduled_task.service.impl;
 
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -6,9 +6,10 @@ import org.example.scheduled_task.entity.CoarseScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.entity.BeanManager;
 import org.example.scheduled_task.quartz.event.TaskEventPublisher;
-import org.example.scheduled_task.quartz.registry.EnhancedRedisScheduledTaskRegistry;
+import org.example.scheduled_task.quartz.registry.DatabaseTaskRegistry;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
+import org.example.scheduled_task.service.TaskService;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
@@ -31,7 +32,7 @@ public class TaskServiceImpl implements TaskService {
     @Resource
     private TaskEventPublisher taskEventPublisher;
     @Resource
-    private EnhancedRedisScheduledTaskRegistry scheduledTaskRegistry;
+    private DatabaseTaskRegistry scheduledTaskRegistry;
 
     @Override
     public void addTaskCompletely(CoarseScheduledTaskMetaData coarseScheduledTaskMetaData) {
