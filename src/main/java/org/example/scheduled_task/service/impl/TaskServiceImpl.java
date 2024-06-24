@@ -55,7 +55,11 @@ public class TaskServiceImpl implements TaskService {
             Class<?> clazz = Class.forName(taskClassPath);
             // 检查是否实现了指定接口
             if (ExecutedTask.class.isAssignableFrom(clazz)) {
-                instance = (ExecutedTask) beanManager.createAndRegisterBean(beanName, taskClassPath);
+                try {
+                    instance = (ExecutedTask) beanManager.createAndRegisterBean(beanName, taskClassPath);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
             } else {
                 throw new IllegalArgumentException(taskClassPath + " 未实现接口 " + ExecutedTask.class.getName());
             }

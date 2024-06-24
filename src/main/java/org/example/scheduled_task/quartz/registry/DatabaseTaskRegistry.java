@@ -18,9 +18,13 @@ import org.example.scheduled_task.quartz.entity.BeanManager;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
 import org.example.scheduled_task.service.*;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,12 +62,15 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
 
     @Resource
     private TaskClassDependenciesService taskClassDependenciesService;
+
     @Resource
     private ApplicationContext applicationContext;
+
     @Resource
     private BeanManager beanManager;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    @Resource
+    private SchedulerFactoryBean schedulerFactoryBean;
 
     @Override
     public ScheduledTaskMetaData<?> getScheduledTaskMetaData(String taskId) {
@@ -188,6 +195,15 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         if (scheduledTask != null) {
             scheduledTask.setTaskStatus(TaskStatus.CANCELED.toValue());
             scheduledTaskService.updateById(scheduledTask);
+
+            Scheduler scheduler = schedulerFactoryBean.getScheduler();
+            //TODO 只有执行状态下面 quartz才会有任务信息对象
+            try {
+                //scheduler.deleteJob(new JobKey("quartz_task:" + taskId));
+                scheduler.deleteJob(new JobKey(taskId));
+            } catch (SchedulerException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -292,7 +308,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         ScheduledTask scheduledTask = scheduledTaskService.getOne(queryWrapper);
 
         if (scheduledTask == null) {
-            throw new RuntimeException("Task not found or marked as deleted");
+            throw new RuntimeException("任务没有找到 或者 被标记为已删除");
         }
 
         QueryWrapper<TaskClassInfo> classInfoQueryWrapper = new QueryWrapper<>();
