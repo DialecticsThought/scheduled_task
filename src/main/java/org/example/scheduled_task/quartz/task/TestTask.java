@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Scope;
 
 /**
  * @author jiahao.liu
- * @description
+ * @description new
  * @date 2024/06/11 19:12
  */
 @Scope("prototype")// 所有任务类都要加上

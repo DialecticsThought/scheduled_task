@@ -75,7 +75,7 @@ public class BeanManager {
 
         beanFactory.registerSingleton(beanName, instance);
 
-        log.info("beanName: {}, 创建并注入容器成: {}", beanName, instance);
+        log.info("beanName: {}, 创建并注入容器: {}", beanName, instance);
 
         return instance;
     }
@@ -85,10 +85,10 @@ public class BeanManager {
                 (DefaultListableBeanFactory) ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
         if (beanFactory.containsSingleton(beanName)) {
             beanFactory.destroySingleton(beanName);
-            log.info("beanName: {} instance destroyed.", beanName);
+            log.info("beanName: {} 实例已销毁.", beanName);
             System.out.println();
         } else {
-            log.info("beanName: {} does not exist.", beanName);
+            log.info("beanName: {} 实例不存在.", beanName);
         }
     }
 
@@ -99,6 +99,7 @@ public class BeanManager {
 
     /**
      * 递归调用
+     *
      * @param task
      * @return
      * @throws IllegalAccessException

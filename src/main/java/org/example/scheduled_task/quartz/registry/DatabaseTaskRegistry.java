@@ -181,7 +181,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     public void cancelTask(String taskId) {
         // 根据taskId查询ScheduledTask实体
         QueryWrapper<ScheduledTask> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("task_id", taskId);
+        queryWrapper.eq("task_id", taskId).eq("deleted", 0);
         ScheduledTask scheduledTask = scheduledTaskService.getOne(queryWrapper);
 
         // 如果任务实体存在，则更新状态为已取消
@@ -232,7 +232,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     }
 
     private void removeTaskFromSpringContainer(String taskId) {
-        String beanName = taskId + ":quartz_task";
+        String beanName = "quartz_task:" + taskId;
         beanManager.removeBeanByName(beanName);
     }
 

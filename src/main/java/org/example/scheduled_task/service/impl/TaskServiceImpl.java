@@ -13,6 +13,7 @@ import org.example.scheduled_task.service.TaskService;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -35,6 +36,7 @@ public class TaskServiceImpl implements TaskService {
     private DatabaseTaskRegistry scheduledTaskRegistry;
 
     @Override
+    @Transactional
     public void addTaskCompletely(CoarseScheduledTaskMetaData coarseScheduledTaskMetaData) {
         String taskId = coarseScheduledTaskMetaData.getTaskId();
         String taskClassPath = coarseScheduledTaskMetaData.getTaskClassPath();
@@ -48,7 +50,7 @@ public class TaskServiceImpl implements TaskService {
         }
         ExecutedTask instance = null;
         try {
-            String beanName = taskId + ":quartz_task";
+            String beanName = "quartz_task:" + taskId;
             // 获取 Class 对象
             Class<?> clazz = Class.forName(taskClassPath);
             // 检查是否实现了指定接口
@@ -104,6 +106,7 @@ public class TaskServiceImpl implements TaskService {
 
 
     @Override
+    @Transactional
     public void addTask(ScheduledTaskMetaData<?> scheduledTaskMetaData) {
         if (!scheduledTaskRegistry.containsTask(scheduledTaskMetaData.getTaskId())) {
             scheduledTaskRegistry.registerTask(scheduledTaskMetaData);
@@ -111,14 +114,10 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    @Transactional
     public void deleteTask(String taskId) {
-        try {
-            if (scheduledTaskRegistry.containsTask(taskId)) {
-                scheduledTaskRegistry.deleteTask(taskId);
-            }
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new RuntimeException(e.getMessage());
+        if (scheduledTaskRegistry.containsTask(taskId)) {
+            scheduledTaskRegistry.deleteTask(taskId);
         }
     }
 
