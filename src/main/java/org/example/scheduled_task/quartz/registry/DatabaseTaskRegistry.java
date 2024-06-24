@@ -31,8 +31,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import static org.example.scheduled_task.quartz.TaskStatus.DELETED;
+import static org.example.scheduled_task.quartz.TaskStatus.*;
 
 
 /**
@@ -96,13 +97,16 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         taskClassInfoService.save(taskClassInfo);
         // TaskClassProperties
         if (scheduledTaskMetaData.getProperties() != null) {
-            for (Map.Entry<String, Object> entry : scheduledTaskMetaData.getProperties().entrySet()) {
-                TaskClassProperties taskClassProperties = new TaskClassProperties();
-                taskClassProperties.setPropertyName(entry.getKey());
-                taskClassProperties.setPropertyValue(entry.getValue().toString());
-                taskClassProperties.setDeleted(0);
-                taskClassProperties.setTaskClassInfoId(taskClassInfo.getId());
-                taskClassPropertiesService.save(taskClassProperties);
+            Set<Map.Entry<String, Object>> entries = scheduledTaskMetaData.getProperties().entrySet();
+            if (entries != null && !entries.isEmpty()) {
+                for (Map.Entry<String, Object> entry : entries) {
+                    TaskClassProperties taskClassProperties = new TaskClassProperties();
+                    taskClassProperties.setPropertyName(entry.getKey());
+                    taskClassProperties.setPropertyValue(entry.getValue().toString());
+                    taskClassProperties.setDeleted(0);
+                    taskClassProperties.setTaskClassInfoId(taskClassInfo.getId());
+                    taskClassPropertiesService.save(taskClassProperties);
+                }
             }
         }
         // TaskClassDependencies
@@ -341,7 +345,10 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
         List<ScheduledTask> allTasks = scheduledTaskService.list(queryWrapper);
         for (ScheduledTask scheduledTask : allTasks) {
             String taskId = scheduledTask.getTaskId();
-            ScheduledTaskMetaData<?> metaData = loadTaskWithDependencies(taskId);
+            String taskStatus = scheduledTask.getTaskStatus();
+            if (EXECUTED.toValue().equals(taskStatus) || ADDED.toValue().equals(taskStatus)) {
+                ScheduledTaskMetaData<?> metaData = loadTaskWithDependencies(taskId);
+            }
             // TODO ....
         }
     }

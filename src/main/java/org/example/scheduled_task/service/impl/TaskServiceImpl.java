@@ -39,7 +39,6 @@ public class TaskServiceImpl implements TaskService {
     @Transactional
     public void addTaskCompletely(CoarseScheduledTaskMetaData coarseScheduledTaskMetaData) {
         String taskId = coarseScheduledTaskMetaData.getTaskId();
-        String taskClassPath = coarseScheduledTaskMetaData.getTaskClassPath();
         String cronExpression = coarseScheduledTaskMetaData.getCronExpression();
         String taskName = coarseScheduledTaskMetaData.getTaskName();
         Map<String, Object> properties = coarseScheduledTaskMetaData.getProperties();
@@ -48,64 +47,17 @@ public class TaskServiceImpl implements TaskService {
         if (((ConfigurableApplicationContext) applicationContext).getBeanFactory().containsSingleton(taskId)) {
             throw new IllegalArgumentException("任务ID " + taskId + " 已经存在，请使用不同的任务ID。");
         }
-        ExecutedTask instance = null;
-        try {
-            String beanName = "quartz_task:" + taskId;
-            // 获取 Class 对象
-            Class<?> clazz = Class.forName(taskClassPath);
-            // 检查是否实现了指定接口
-            if (ExecutedTask.class.isAssignableFrom(clazz)) {
-                try {
-                    instance = (ExecutedTask) beanManager.createAndRegisterBean(beanName, taskClassPath);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            } else {
-                throw new IllegalArgumentException(taskClassPath + " 未实现接口 " + ExecutedTask.class.getName());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("创建任务实例失败", e);
-        }
+        ExecutedTask instance = beanManager.createTaskInstance(coarseScheduledTaskMetaData);
         // TODO 如果对象有依赖注入，交给容器管理之后，会自动注入
 
-        // 将 instance 的引用赋值给一个局部变量 finalInstance，
-        // 可以避免在 lambda 表达式中直接使用 instance，并且无需将 instance 声明为 final。
-        ExecutedTask finalInstance = instance;
-        // 使用传入的properties参数给ExecutedTask实例赋值
-        if (properties != null) {
-            properties.forEach((key, value) -> {
-                try {
-                    // 获取对应的字段
-                    Field field = getField(finalInstance.getClass(), key);
-                    if (field != null) {
-                        field.setAccessible(true);
-                        field.set(finalInstance, value);
-                    } else {
-                        throw new NoSuchFieldException("Field " + key + " not found in class " + finalInstance.getClass().getName());
-                    }
-                } catch (Exception e) {
-                    throw new RuntimeException("设置属性 " + key + " 失败", e);
-                }
-            });
-        }
+        beanManager.assignValue(instance, properties);
+
         CronScheduleStrategy cronScheduleStrategy = new CronScheduleStrategy(cronExpression);
 
         ScheduledTaskMetaData<?> scheduledTaskMetaData =
                 new ScheduledTaskMetaData<>(taskId, taskName, cronScheduleStrategy, instance, properties);
 
         addTask(scheduledTaskMetaData);
-    }
-
-    // 辅助方法，用于在类层次结构中查找字段
-    private Field getField(Class<?> clazz, String fieldName) {
-        while (clazz != null) {
-            try {
-                return clazz.getDeclaredField(fieldName);
-            } catch (NoSuchFieldException e) {
-                clazz = clazz.getSuperclass();
-            }
-        }
-        return null;
     }
 
 

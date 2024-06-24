@@ -3,6 +3,8 @@ package org.example.scheduled_task.quartz.entity;
 import jakarta.annotation.Resource;
 
 import lombok.extern.slf4j.Slf4j;
+import org.example.scheduled_task.entity.CoarseScheduledTaskMetaData;
+import org.example.scheduled_task.quartz.task.ExecutedTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -165,4 +167,68 @@ public class BeanManager {
                 clazz.equals(Short.class) ||
                 clazz.equals(Void.class);
     }
+
+
+    public ExecutedTask createTaskInstance(CoarseScheduledTaskMetaData coarseScheduledTaskMetaData) {
+        String taskId = coarseScheduledTaskMetaData.getTaskId();
+        String taskClassPath = coarseScheduledTaskMetaData.getTaskClassPath();
+        ExecutedTask instance = null;
+        try {
+            String beanName = "quartz_task:" + taskId;
+            // 获取 Class 对象
+            Class<?> clazz = Class.forName(taskClassPath);
+            // 检查是否实现了指定接口
+            if (ExecutedTask.class.isAssignableFrom(clazz)) {
+                try {
+                    instance = (ExecutedTask) createAndRegisterBean(beanName, taskClassPath);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            } else {
+                throw new IllegalArgumentException(taskClassPath + " 未实现接口 " + ExecutedTask.class.getName());
+            }
+            return instance;
+        } catch (Exception e) {
+            throw new RuntimeException("创建任务实例失败", e);
+        }
+    }
+
+    public ExecutedTask assignValue(ExecutedTask instance, Map<String, Object> properties) {
+        // 将 instance 的引用赋值给一个局部变量 finalInstance，
+        // 可以避免在 lambda 表达式中直接使用 instance，并且无需将 instance 声明为 final。
+        ExecutedTask finalInstance = instance;
+        // 使用传入的properties参数给ExecutedTask实例赋值
+        if (properties != null) {
+            if (properties.entrySet() != null && !properties.entrySet().isEmpty()) {
+                properties.forEach((key, value) -> {
+                    try {
+                        // 获取对应的字段
+                        Field field = getField(finalInstance.getClass(), key);
+                        if (field != null) {
+                            field.setAccessible(true);
+                            field.set(finalInstance, value);
+                        } else {
+                            throw new NoSuchFieldException("Field " + key + " not found in class " + finalInstance.getClass().getName());
+                        }
+                    } catch (Exception e) {
+                        throw new RuntimeException("设置属性 " + key + " 失败", e);
+                    }
+                });
+            }
+        }
+        return instance;
+    }
+
+    // 辅助方法，用于在类层次结构中查找字段
+    public Field getField(Class<?> clazz, String fieldName) {
+        while (clazz != null) {
+            try {
+                return clazz.getDeclaredField(fieldName);
+            } catch (NoSuchFieldException e) {
+                clazz = clazz.getSuperclass();
+            }
+        }
+        return null;
+    }
+
 }
