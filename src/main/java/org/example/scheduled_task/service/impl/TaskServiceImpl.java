@@ -49,7 +49,6 @@ public class TaskServiceImpl implements TaskService {
         }
         ExecutedTask instance = beanManager.createTaskInstance(coarseScheduledTaskMetaData);
         // TODO 如果对象有依赖注入，交给容器管理之后，会自动注入
-
         beanManager.assignValue(instance, properties);
 
         CronScheduleStrategy cronScheduleStrategy = new CronScheduleStrategy(cronExpression);

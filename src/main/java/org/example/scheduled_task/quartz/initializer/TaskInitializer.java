@@ -15,12 +15,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class TaskInitializer {
     @Resource
-    private TaskEventPublisher taskEventPublisher;
-    @Resource
     private DatabaseTaskRegistry databaseTaskRegistry;
 
     @EventListener
     public void onApplicationReady(ApplicationReadyEvent event) {
-        //databaseTaskRegistry.initializeTasksFromDatabase();
+        databaseTaskRegistry.initializeTasksFromDatabase();
     }
 }

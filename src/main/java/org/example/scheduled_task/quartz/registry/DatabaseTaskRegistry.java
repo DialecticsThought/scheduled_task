@@ -15,6 +15,7 @@ import org.example.scheduled_task.mapper.TaskClassPropertiesMapper;
 import org.example.scheduled_task.quartz.TaskStatus;
 import org.example.scheduled_task.quartz.bridge.ScheduledTaskMetaData;
 import org.example.scheduled_task.quartz.entity.BeanManager;
+import org.example.scheduled_task.quartz.event.TaskEventPublisher;
 import org.example.scheduled_task.quartz.strategy.cron.CronScheduleStrategy;
 import org.example.scheduled_task.quartz.task.ExecutedTask;
 import org.example.scheduled_task.service.*;
@@ -23,7 +24,9 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,6 +75,9 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
 
     @Resource
     private SchedulerFactoryBean schedulerFactoryBean;
+
+    @Resource
+    private TaskEventPublisher taskEventPublisher;
 
     @Override
     public ScheduledTaskMetaData<?> getScheduledTaskMetaData(String taskId) {
@@ -279,6 +285,7 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
     private ExecutedTask<?> instantiateAndInject(TaskClassInfo taskClassInfo,
                                                  List<TaskClassProperties> properties,
                                                  List<TaskClassDependencies> dependencies) {
+        String beanName = "quartz_task:" + taskClassInfo.getTaskId();
         try {
             Class<?> taskClass = Class.forName(taskClassInfo.getTaskClassPath());
             ExecutedTask<?> taskInstance = (ExecutedTask<?>) taskClass.getDeclaredConstructor().newInstance();
@@ -298,7 +305,11 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
             }
 
             applicationContext.getAutowireCapableBeanFactory().autowireBean(taskInstance);
-            applicationContext.getAutowireCapableBeanFactory().initializeBean(taskInstance, taskClassInfo.getTaskId());
+            applicationContext.getAutowireCapableBeanFactory().initializeBean(taskInstance, beanName);
+
+            /*DefaultListableBeanFactory beanFactory =
+                    (DefaultListableBeanFactory) ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
+            beanFactory.registerSingleton(beanName, taskInstance);*/
 
             return taskInstance;
         } catch (Exception e) {
@@ -348,6 +359,10 @@ public class DatabaseTaskRegistry implements ScheduledTaskRegistry {
             String taskStatus = scheduledTask.getTaskStatus();
             if (EXECUTED.toValue().equals(taskStatus) || ADDED.toValue().equals(taskStatus)) {
                 ScheduledTaskMetaData<?> metaData = loadTaskWithDependencies(taskId);
+                if (EXECUTED.toValue().equals(taskStatus)) {
+                    // 发布事件
+                    taskEventPublisher.publishTaskEvent(metaData);
+                }
             }
             // TODO ....
         }
